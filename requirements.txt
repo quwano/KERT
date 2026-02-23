@@ -1,0 +1,8 @@
+# KERT - EPUB3 & DAISY4 Support Tool
+# Python dependencies
+
+# TextGrid manipulation
+textgrid
+
+# XSLT 3.0 processor (Saxon-HE for Python)
+saxonche

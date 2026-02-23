@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="root">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element ref="title1"/>
+        <xs:element ref="title2"/>
+        <xs:element ref="title3"/>
+        <xs:element ref="title4"/>
+        <xs:element ref="title5"/>
+        <xs:element ref="p"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="title1" type="rich_text"/>
+  <xs:element name="title2" type="rich_text"/>
+  <xs:element name="title3" type="rich_text"/>
+  <xs:element name="title4" type="rich_text"/>
+  <xs:element name="title5" type="rich_text"/>
+  <xs:element name="p" type="rich_text"/>
+  <xs:element name="sup" type="xs:string"/>
+  <xs:element name="sub" type="xs:string"/>
+  <xs:element name="yomikae">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="rich_text">
+          <xs:attribute name="yomi"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ruby">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="rich_text">
+          <xs:attribute name="yomi"/>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="u" type="rich_text"/>
+  <xs:element name="g" type="rich_text"/>
+  <xs:complexType mixed="true" name="rich_text">
+    <xs:choice maxOccurs="unbounded" minOccurs="0">
+      <xs:element ref="sub"/>
+      <xs:element ref="sup"/>
+      <xs:element ref="yomikae"/>
+      <xs:element ref="ruby"/>
+      <xs:element ref="g"/>
+      <xs:element ref="u"/>
+    </xs:choice>
+  </xs:complexType>
+</xs:schema>
