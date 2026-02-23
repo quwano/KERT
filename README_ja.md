@@ -2,7 +2,7 @@
 
 **[English](./README.md)** | **日本語**
 
-![version](https://img.shields.io/badge/version-v1.0.0-brightgreen)
+![version](https://img.shields.io/badge/version-v1.0.1-brightgreen)
 ![license](https://img.shields.io/badge/license-GPL-green)
 ![platform](https://img.shields.io/badge/platform-MacOS%20Sequoia%2FTahoe%20Windows%2011-blue)
 
@@ -84,7 +84,7 @@ pip install spacy sudachipy sudachidict_core
 - **macOS**: `say` コマンド（英語: Samantha、ドイツ語: Anna）
 - **Windows**: PowerShell 経由で System.Speech.Synthesis（SAPI）を使用。macOS say と同じ言語設定で自動的にフォールバックされます。
 
-追加のインストールは不要です。
+> **Windows での注意**: 事前に対象言語の言語パックをインストールしておく必要があります。**Windows の設定 > 時刻と言語 > 言語と地域** から英語またはドイツ語を追加し、**音声**機能が有効になっていることを確認してください。
 
 ### FFmpeg
 

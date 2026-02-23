@@ -96,6 +96,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "tts_say_voice": "  音声: {voice}",
         "tts_sapi_start": "Windows SAPIを使用して、テキストファイルから音声ファイルを生成します。",
         "tts_sapi_culture": "  Culture: {culture}",
+        "sapi_voice_not_found": "{culture} の言語パックがインストールされていません。\nWindows の設定 > 時刻と言語 > 言語 から言語パックを追加し、音声機能を有効にしてください。",
+        "sapi_error": "Windows SAPI でエラーが発生しました。\n標準エラー: {stderr}",
         "ffmpeg_start": "FFmpegを使用して、WAVファイルをMP3に変換します。",
         "ffmpeg_mp3_saved": "MP3ファイルを生成しました: {file}",
 
@@ -226,6 +228,8 @@ MESSAGES: dict[str, dict[str, str]] = {
         "tts_say_voice": "  Voice: {voice}",
         "tts_sapi_start": "Generating audio from text file using Windows SAPI.",
         "tts_sapi_culture": "  Culture: {culture}",
+        "sapi_voice_not_found": "Language pack for {culture} is not installed.\nGo to Windows Settings > Time & Language > Language to add the language pack and enable speech.",
+        "sapi_error": "Windows SAPI error.\nStderr: {stderr}",
         "ffmpeg_start": "Converting WAV to MP3 using FFmpeg.",
         "ffmpeg_mp3_saved": "MP3 file generated: {file}",
 

@@ -520,8 +520,13 @@ def gen_sound_file_sapi(text_source_file: str, sound_file: str, culture: str = "
         logger.success(msg("tts_audio_saved", file=sound_file))
 
     except subprocess.CalledProcessError as e:
+        if "No voice found" in (e.stderr or ""):
+            raise AudioGenerationError(
+                msg("sapi_voice_not_found", culture=culture),
+                source_file=text_source_file
+            )
         raise AudioGenerationError(
-            f"PowerShell/SAPIでエラーが発生しました。\nエラー: {e}\n標準エラー: {e.stderr}",
+            msg("sapi_error", stderr=e.stderr),
             source_file=text_source_file
         )
     except Exception as e:
@@ -578,11 +583,21 @@ def _synthesize_with_sapi(text: str, culture: str) -> bytes:
         escaped_wav_path = tmp_raw_path.replace("'", "''")
 
         ps_script = (
+            "$ErrorActionPreference = 'Stop'; "
             "Add-Type -AssemblyName System.Speech; "
+            f"$culture = [System.Globalization.CultureInfo]::new('{escaped_culture}'); "
             "$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+            "$available = $synth.GetInstalledVoices() | "
+            "  Where-Object { $_.VoiceInfo.Culture.Name -eq $culture.Name }; "
+            "if (-not $available) { "
+            "  Write-Error ('No voice found for ' + $culture.Name + "
+            "    '. Install the language pack: Windows Settings > Time & Language > Language.'); "
+            "  exit 1 "
+            "}; "
             "$synth.SelectVoiceByHints("
-            "[System.Speech.Synthesis.VoiceGender]::NotSet, 0, 0, "
-            f"[System.Globalization.CultureInfo]::new('{escaped_culture}')); "
+            "[System.Speech.Synthesis.VoiceGender]::NotSet, "
+            "[System.Speech.Synthesis.VoiceAge]::NotSet, "
+            "0, $culture); "
             f"$synth.SetOutputToWaveFile('{escaped_wav_path}'); "
             f"$synth.Speak('{escaped_text}'); "
             "$synth.Dispose()"

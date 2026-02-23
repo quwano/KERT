@@ -2,13 +2,11 @@
 
 **English** | **[日本語](./README_ja.md)**
 
-![version](https://img.shields.io/badge/version-v1.0.0-brightgreen)
+![version](https://img.shields.io/badge/version-v1.0.1-brightgreen)
 ![license](https://img.shields.io/badge/license-GPL-green)
 ![platform](https://img.shields.io/badge/platform-MacOS%20Sequoia%2FTahoe%20Windows%2011-blue)
 
 ## About This Project
-
-Author: Kazuyuki Kuwano
 
 KERT is a tool that generates **DAISY4/EPUB3 ebooks with Media Overlay (audio synchronization)** from text files. It is written in Python.
 
@@ -86,7 +84,7 @@ Built-in OS TTS is used for English and German text-to-speech synthesis.
 - **macOS**: `say` command (English: Samantha, German: Anna)
 - **Windows**: Uses System.Speech.Synthesis (SAPI) via PowerShell. Automatically falls back from macOS say with the same language settings.
 
-No additional installation is required.
+> **Note for Windows**: The language pack for the target language must be installed in advance. Go to **Windows Settings > Time & Language > Language**, add English or German, and make sure **Speech** is enabled.
 
 ### FFmpeg
 
