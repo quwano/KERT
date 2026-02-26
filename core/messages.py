@@ -5,6 +5,7 @@ OSのロケールに基づいて日本語/英語のUIメッセージを自動切
 """
 import locale
 import os
+import sys
 
 MESSAGES: dict[str, dict[str, str]] = {
     "ja": {
@@ -276,17 +277,36 @@ MESSAGES: dict[str, dict[str, str]] = {
 # OS言語判定
 def _detect_ui_language() -> str:
     """OSのロケールから UI 言語を判定する。"""
-    # 環境変数を優先的にチェック（LANG, LC_ALL, LC_MESSAGES）
+    # macOS: システム言語設定（AppleLanguages）を最優先
+    # LANG=C.UTF-8 等はシステム言語と無関係なため、macOS設定を先にチェック
+    if sys.platform == "darwin":
+        try:
+            import subprocess
+            result = subprocess.run(
+                ["defaults", "read", "-g", "AppleLanguages"],
+                capture_output=True, text=True, timeout=2
+            )
+            if result.returncode == 0:
+                # 出力例: ("ja-JP", "en-US", ...) → 先頭の言語コードを取得
+                for line in result.stdout.splitlines():
+                    line = line.strip().strip('",() ')
+                    if line:
+                        return "ja" if line.startswith("ja") else "en"
+        except Exception:
+            pass
+    # 環境変数をチェック（LC_ALL, LC_MESSAGES, LANG）
+    # C / C.UTF-8 / POSIX はデフォルト値のため言語指定なしとして除外
     for env_var in ("LC_ALL", "LC_MESSAGES", "LANG"):
         value = os.environ.get(env_var, "")
-        if value:
+        if value and not value.startswith("C") and value != "POSIX":
             return "ja" if value.startswith("ja") else "en"
     # フォールバック: locale.getlocale()
+    # Windows では "Japanese_Japan" のように返るため、大文字小文字を無視して判定
     try:
         loc = locale.getlocale()[0] or ""
     except ValueError:
         loc = ""
-    return "ja" if loc.startswith("ja") else "en"
+    return "ja" if loc.lower().startswith("ja") else "en"
 
 _ui_lang = _detect_ui_language()
 
