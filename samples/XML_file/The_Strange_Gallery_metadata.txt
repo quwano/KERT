@@ -1,0 +1,13 @@
+title:The Strange Gallery
+contributor:Jane Doe
+author:John Doe
+publisher:
+rights:
+subject:sample
+accessModeSufficient:textual
+accessibilitySummary:No special notes
+accessMode:textual
+accessibilityFeature:index
+accessibilityHazard:noFlashingHazard
+accessibilityHazard:noMotionSimulationHazard
+accessibilityHazard:noSoundHazard

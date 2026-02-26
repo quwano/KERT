@@ -2,7 +2,7 @@
 
 **English** | **[日本語](./README_ja.md)**
 
-
+![version](https://img.shields.io/github/v/release/quwano/KERT?label=version&color=brightgreen)
 ![license](https://img.shields.io/badge/license-GPL-green)
 ![platform](https://img.shields.io/badge/platform-MacOS%20Sequoia%2FTahoe%20Windows%2011-blue)
 
