@@ -68,8 +68,8 @@
 
                 <!-- テキストノード -->
                 <xsl:when test="self::text()">
-                    <xsl:variable name="text" select="normalize-space(.)"/>
-                    <xsl:if test="$text != ''">
+                    <xsl:variable name="text" select="replace(., '\s+', ' ')"/>
+                    <xsl:if test="normalize-space($text) != ''">
                         <xsl:value-of select="$text"/>
                     </xsl:if>
                 </xsl:when>
@@ -103,8 +103,8 @@
             </xsl:when>
 
             <xsl:when test="self::text()">
-                <xsl:variable name="text" select="normalize-space(.)"/>
-                <xsl:if test="$text != ''">
+                <xsl:variable name="text" select="replace(., '\s+', ' ')"/>
+                <xsl:if test="normalize-space($text) != ''">
                     <xsl:value-of select="$text"/>
                 </xsl:if>
             </xsl:when>

@@ -39,7 +39,7 @@ PUNCTUATION = set(PUNCTUATION_CHARS)
 SENTENCE_DELIMITERS = set("。、，.,")
 
 # マッチング時にスキップする文字（スペース・句読点・括弧等）
-_MATCHING_SKIP_RE = re.compile(r'[\s。、．，.,!！?？：:；;（）()「」『』\[\]【】｛｝{}・\-]')
+_MATCHING_SKIP_RE = re.compile(r'[\s。、．，.,!！?？：:；;（）()「」『』\[\]【】｛｝{}・\-"\'""'']')
 
 
 def _normalize_for_matching(text: str) -> str:
