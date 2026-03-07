@@ -50,6 +50,9 @@ KERT は以下のツール・ライブラリを使用しています。各ツー
 | [textgrid](https://github.com/kylebgorman/textgrid) | MIT License | TextGrid ファイルの読み込み |
 | [saxonche](https://pypi.org/project/saxonche/) | MPL 2.0 | XSLT 3.0 プロセッサ |
 | [FFmpeg](https://ffmpeg.org/) | LGPL / GPL | WAV から MP3 への音声変換 |
+| [pandoc](https://pandoc.org/) | GPL-2.0 | TeX → MathML 変換（数式サポート） |
+| [Node.js](https://nodejs.org/) | MIT License | speech-rule-engine の実行環境（数式サポート） |
+| [speech-rule-engine](https://github.com/zorkow/speech-rule-engine) | Apache 2.0 | MathML → 読み上げテキスト変換（数式サポート） |
 
 ## 商標について
 

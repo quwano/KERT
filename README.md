@@ -115,6 +115,43 @@ Installed packages:
 
 saxonche is used for XML input conversion. It is not required if you only use CommonMark input. If not needed, remove the saxonche entry from requirements.txt.
 
+### Math Formula Support (Optional)
+
+Math formulas in TeX notation (`$...$`, `$$...$$`) in CommonMark files and MathML (`<math>`) in XML files are supported. The following tools are required to enable this feature.
+
+| Tool | Purpose | Installation |
+|------|---------|-------------|
+| [pandoc](https://pandoc.org/) | TeX → MathML conversion | `brew install pandoc` / [pandoc.org](https://pandoc.org/installing.html) |
+| [Node.js](https://nodejs.org/) | Runtime for speech-rule-engine | `brew install node` / [nodejs.org](https://nodejs.org/) |
+| [speech-rule-engine](https://github.com/zorkow/speech-rule-engine) | MathML → speech text | See below |
+
+#### Supported Languages for Math Speech
+
+Math formula **display** (MathML in EPUB) works regardless of language. However, **speech output** (reading formulas aloud during playback) requires both speech-rule-engine and MFA to support the language.
+
+For supported languages, see [speechruleengine.org](https://speechruleengine.org/).
+
+| KERT Language | Math Display | Math Speech |
+|---------------|-------------|-------------|
+| Japanese (ja_JP) | ✓ | ✗ Not available (as of March 2026, SRE does not support Japanese) |
+| English (en_US)  | ✓ | ✓ |
+| Deutsch (de_DE)  | ✓ | ✓ |
+
+For Japanese input, math formulas appear as MathML in the EPUB but are not read aloud correctly. Surrounding text is processed normally.
+
+#### Installing speech-rule-engine
+
+speech-rule-engine must be installed locally in the **KERT project root directory**.
+
+> **Important**: Run `npm install` from the **KERT project root directory**. Installing in a different directory will not be recognized by KERT, even though npm will not report an error.
+
+```bash
+cd /path/to/KERT   # Navigate to KERT project root
+npm install speech-rule-engine
+```
+
+If any of these tools are missing when math formulas are detected in the input file, KERT will display a warning and prompt you to abort or continue without math support.
+
 ## Multi-Language Support
 
 ### Supported Languages
@@ -207,6 +244,8 @@ Section 1 content.
 | `[text]{.frame}` | Framed box | `[A]{.frame}` | Text with border |
 | `~text~` | Subscript | `H~2~O` | H<sub>2</sub>O |
 | `^text^` | Superscript | `10^3^` | 10<sup>3</sup> |
+| `$formula$` | Inline math (TeX) | `$x^2 + y^2$` | Inline MathML |
+| `$$formula$$` | Display math (TeX) | `$$\int_0^1 x\,dx$$` | Block MathML (centered) |
 
 - The alternative reading notation `[display](+reading)` is used when you want different display text and spoken text.
 - Formatting notations support nesting. Example: `[**bold underline**]{.underline}`
@@ -250,6 +289,7 @@ The root element is `<root>`, with heading elements (`title1` to `title5`) and p
 | `<g>` | Emphasis (bold) | `<g>emphasized text</g>` |
 | `<sub>` | Subscript | `<sub>2</sub>` |
 | `<sup>` | Superscript | `<sup>3</sup>` |
+| `<math>` | MathML formula | `<math xmlns="...">...</math>` |
 
 - Decoration elements can be nested. Example: `<u><g>bold underline</g></u>`
 

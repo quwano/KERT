@@ -50,6 +50,9 @@ VOICEVOX is used for Japanese text-to-speech synthesis.
 | [textgrid](https://github.com/kylebgorman/textgrid) | MIT License | Reading TextGrid files |
 | [saxonche](https://pypi.org/project/saxonche/) | MPL 2.0 | XSLT 3.0 processor |
 | [FFmpeg](https://ffmpeg.org/) | LGPL / GPL | Audio conversion from WAV to MP3 |
+| [pandoc](https://pandoc.org/) | GPL-2.0 | TeX → MathML conversion (math support) |
+| [Node.js](https://nodejs.org/) | MIT License | Runtime for speech-rule-engine (math support) |
+| [speech-rule-engine](https://github.com/zorkow/speech-rule-engine) | Apache 2.0 | MathML → speech text (math support) |
 
 ## Trademarks
 
