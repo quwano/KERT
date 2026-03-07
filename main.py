@@ -11,7 +11,7 @@ from enum import Enum
 from pathlib import Path
 
 from core import logger
-from core.messages import msg, set_ui_language
+from core.messages import msg
 from core.config import (
     AUDIO_BASE_NAME,
     PRIMARY_SOUND_SUFFIX,
@@ -326,12 +326,10 @@ def _prompt_language() -> tuple[LanguageConfig, int]:
         if not (0 <= index < len(lang_options)):
             index = 0
         lang_config = get_language_config(lang_options[index])
-        set_ui_language(lang_config.code)
         logger.info(msg("selected_language", name=lang_config.display_name))
         return lang_config, index + 1
     except ValueError:
         lang_config = get_language_config("ja_JP")
-        set_ui_language(lang_config.code)
         logger.info(msg("default_language", name=lang_config.display_name))
         return lang_config, 1
 
