@@ -674,6 +674,54 @@ def process_commonmark_folder(
 # メイン関数
 # =============================================================================
 
+def _detect_math_in_source(source: str, input_format: InputFormat, is_folder: bool) -> bool:
+    """ソースファイル/フォルダをスキャンして数式の有無を返す。"""
+    from mathconv.converter import detect_math_in_commonmark, detect_math_in_xml
+    source_path = Path(source)
+    is_xml = input_format == InputFormat.XML
+
+    if is_folder:
+        files = list(source_path.glob("*.xml")) if is_xml else (
+            list(source_path.glob("*.txt")) + list(source_path.glob("*.md"))
+        )
+    else:
+        files = [source_path]
+
+    detect_fn = detect_math_in_xml if is_xml else detect_math_in_commonmark
+    for f in files:
+        try:
+            if detect_fn(f.read_text(encoding='utf-8')):
+                return True
+        except Exception:
+            pass
+    return False
+
+
+def _check_math_and_prompt(source: str, input_format: InputFormat, is_folder: bool) -> bool:
+    """数式検出・ツールチェック・ユーザー選択を行う。True=続行, False=中止。"""
+    if not _detect_math_in_source(source, input_format, is_folder):
+        return True  # 数式なし
+
+    from mathconv.converter import check_math_tools
+    tools = check_math_tools()
+    missing = [name for name, ok in tools.items() if not ok]
+    if not missing:
+        return True  # 数式あり、全ツール利用可能
+
+    # 数式あり + ツール不足 → 警告してユーザーに選択させる
+    logger.separator("-")
+    print(msg("math_tools_missing"))
+    name_map = {"pandoc": "pandoc", "node": "Node.js", "sre": "speech-rule-engine (npm)"}
+    for name in missing:
+        print(f"  - {name_map[name]}: {msg('not_installed')}")
+    print(msg("math_will_not_render"))
+    logger.separator("-")
+
+    options = [msg("opt_abort_recommended"), msg("opt_continue_without_math")]
+    choice = _prompt_choice("", options, default=1)
+    return choice == 2  # 2=続行, 1=中止
+
+
 def _execute_processing(
     input_format: InputFormat,
     processing_mode: ProcessingMode,
@@ -693,6 +741,12 @@ def _execute_processing(
     # ソースパス取得（引用符付き入力への対応: "path" や 'path' をトリム）
     source = _prompt_source_path(file_type, file_ext, is_folder=is_folder)
     source = source.strip().strip('"').strip("'")
+
+    # 数式検出・ツールチェック
+    if not _check_math_and_prompt(source, input_format, is_folder):
+        print(msg("processing_aborted"))
+        return
+
     keep = _prompt_keep_intermediate(Path(source).parent)
 
     # 入力形式と処理モードに応じた処理を実行

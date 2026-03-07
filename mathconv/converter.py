@@ -303,6 +303,32 @@ def get_current_processor() -> MathProcessor | None:
     return _current_processor
 
 
+def detect_math_in_commonmark(text: str) -> bool:
+    """CommonMarkテキスト中の数式パターンを検出する（外部ツール呼び出しなし）。"""
+    return bool(DISPLAY_MATH_PATTERN.search(text) or INLINE_MATH_PATTERN.search(text))
+
+
+def detect_math_in_xml(text: str) -> bool:
+    """XMLテキスト中のMathML要素を検出する。"""
+    return bool(re.search(r'<math\b', text))
+
+
+def check_math_tools() -> dict[str, bool]:
+    """数式処理に必要な外部ツールの利用可否を確認する。
+
+    Returns
+    -------
+    dict[str, bool]
+        {"pandoc": bool, "node": bool, "sre": bool}
+    """
+    import shutil as _shutil
+    pandoc_ok = _shutil.which("pandoc") is not None
+    node_ok = _shutil.which("node") is not None
+    sre_path = Path(__file__).parent.parent / "node_modules" / "speech-rule-engine"
+    sre_ok = sre_path.exists()
+    return {"pandoc": pandoc_ok, "node": node_ok, "sre": sre_ok}
+
+
 def init_math_support(lang_code: str) -> MathProcessor:
     """言語コードからMathProcessorを初期化してシングルトンに設定する。
 

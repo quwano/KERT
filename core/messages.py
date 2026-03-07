@@ -132,6 +132,13 @@ MESSAGES: dict[str, dict[str, str]] = {
         "epub_file_done": "    処理完了: {name}",
         "epub_chapter_done": "  処理完了: {id}: {title}",
 
+        # 数式ツールチェック
+        "math_tools_missing": "警告: 数式が検出されましたが、以下のツールが見つかりません:",
+        "not_installed": "未インストール",
+        "math_will_not_render": "数式は正しく処理されません。",
+        "opt_abort_recommended": "処理を中止する（推奨）",
+        "opt_continue_without_math": "数式を無視して続行する",
+
         # EPUBビルダー固有ログ
         "xml_sections_epub_start": "XMLファイル（セクション構造）からEPUBファイルを生成します。",
         "xml_epub_start": "TextGridファイルとmp3ファイルを元に、EPUBファイルを生成します。",
@@ -263,6 +270,13 @@ MESSAGES: dict[str, dict[str, str]] = {
         "epub_file_processing": "  Processing: {name} ({count} section(s))",
         "epub_file_done": "    Done: {name}",
         "epub_chapter_done": "  Done: {id}: {title}",
+
+        # Math tool check
+        "math_tools_missing": "Warning: Math formulas found, but the following tools are missing:",
+        "not_installed": "not installed",
+        "math_will_not_render": "Math formulas will not be rendered correctly.",
+        "opt_abort_recommended": "Abort (recommended)",
+        "opt_continue_without_math": "Continue without math support",
 
         # EPUB builder specific log
         "xml_sections_epub_start": "Generating EPUB from XML file (section structure).",
