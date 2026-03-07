@@ -1,0 +1,13 @@
+title:数式テスト
+contributor:Gemini
+author:Kazuyuki Kuwano
+publisher:
+rights:
+subject:sample
+accessModeSufficient:textual
+accessibilitySummary:No special notes
+accessMode:textual
+accessibilityFeature:index
+accessibilityHazard:noFlashingHazard
+accessibilityHazard:noMotionSimulationHazard
+accessibilityHazard:noSoundHazard

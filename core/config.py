@@ -17,6 +17,7 @@ class LanguageConfig:
     mfa_acoustic: str            # MFA音響モデル名
     tts_engine: str              # TTS engine ("voicevox" or "say")
     tts_voice: str | None        # TTS音声名（sayの場合）
+    sre_lang: str = "en"         # Speech Rule Engine言語コード（数式読み上げ用）
 
 
 # 対応言語の設定
@@ -29,6 +30,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         mfa_acoustic="japanese_mfa",
         tts_engine="voicevox",
         tts_voice=None,
+        sre_lang="ja",
     ),
     "en_US": LanguageConfig(
         code="en_US",
@@ -38,6 +40,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         mfa_acoustic="english_us_arpa",
         tts_engine="say",
         tts_voice="Samantha",
+        sre_lang="en",
     ),
     "de_DE": LanguageConfig(
         code="de_DE",
@@ -47,6 +50,7 @@ LANGUAGE_CONFIGS: dict[str, LanguageConfig] = {
         mfa_acoustic="german_mfa",
         tts_engine="say",
         tts_voice="Anna",
+        sre_lang="de",
     ),
 }
 

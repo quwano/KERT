@@ -45,6 +45,7 @@ def normalize_text(text: str) -> str:
         - 上付き: ^text^
         - 太字: **text**
         - Underline: [text]{.underline}
+        - 数式プレースホルダー: \\x02MATH{idx}\\x02
 
     Returns
     -------
@@ -54,6 +55,7 @@ def normalize_text(text: str) -> str:
         - 丸数字・ローマ数字は読み仮名に変換されます
         - 全角括弧は半角に変換されます
         - 全角数字は半角に変換されます
+        - 数式プレースホルダーは対応するSRE音声テキストに展開されます
 
     Examples
     --------
@@ -78,6 +80,11 @@ def normalize_text(text: str) -> str:
     result = TextNormalizer.to_reading(result)
     # TextNormalizerで一括正規化（括弧を含む）
     result = TextNormalizer.normalize_all(result, include_brackets=True)
+    # 数式プレースホルダーを音声テキストに展開
+    from mathconv.converter import get_current_processor
+    math_proc = get_current_processor()
+    if math_proc:
+        result = math_proc.to_speech(result)
     return result
 
 
@@ -264,6 +271,11 @@ class FormattingHandler:
         temp = self._restore_all_placeholders(temp)
         # 壊れた**パターンを除去
         temp = temp.replace('**', '')
+        # 数式プレースホルダー（\x02MATH{idx}\x02）をMathML要素に展開
+        from mathconv.converter import get_current_processor
+        math_proc = get_current_processor()
+        if math_proc:
+            temp = math_proc.to_xhtml(temp)
         return temp
 
 
@@ -339,11 +351,36 @@ def reading_pos_to_original(text: str, reading_pos: int) -> int:
     original_pos = 0
     current_reading_pos = 0
 
+    # 数式プロセッサを一度だけ取得（ループ内で毎回呼ぶコストを避ける）
+    from mathconv.converter import get_current_processor, MATH_PLACEHOLDER_PATTERN as _MATH_PH_PATTERN
+    _math_proc = get_current_processor()
+
     while current_reading_pos <= reading_pos and original_pos < len(text):
         # current_reading_pos == reading_pos の場合、パターン内部への再帰が必要かチェック
         at_target = (current_reading_pos == reading_pos)
 
         remaining = text[original_pos:]
+
+        # 数式プレースホルダーのチェック: \x02MATH{idx}\x02
+        if _math_proc and remaining and remaining[0] == '\x02':
+            math_match = _MATH_PH_PATTERN.match(remaining)
+            if math_match:
+                idx = int(math_match.group(1))
+                entry = _math_proc.get_entry(idx)
+                if entry is not None:
+                    placeholder_len = len(math_match.group(0))
+                    speech_len = len(entry.speech)
+                    if at_target:
+                        # プレースホルダーの先頭に到達 → 先頭位置を返す
+                        return original_pos
+                    elif current_reading_pos + speech_len <= reading_pos:
+                        # プレースホルダー全体をスキップ
+                        current_reading_pos += speech_len
+                        original_pos += placeholder_len
+                        continue
+                    else:
+                        # プレースホルダーの途中 → 末尾位置を返す（orig_end計算用）
+                        return original_pos + placeholder_len
 
         # Underline記法のチェック: [text]{.underline}
         underline_match = UNDERLINE_PATTERN.match(remaining)

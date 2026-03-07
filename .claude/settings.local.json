@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m py_compile:*)",
+      "Bash(python test_epub_build.py:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(grep:*)",
+      "Bash(unzip:*)",
+      "Bash(python main.py:*)",
+      "Bash(cat:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(xxd:*)",
+      "Bash(awk:*)",
+      "Bash(printf:*)",
+      "WebFetch(domain:support.microsoft.com)",
+      "WebSearch",
+      "Bash(python -c:*)",
+      "Bash(python:*)"
+    ]
+  }
+}

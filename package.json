@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "speech-rule-engine": "^5.0.0-beta.6"
+  }
+}

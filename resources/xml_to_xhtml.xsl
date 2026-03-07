@@ -22,7 +22,7 @@
     <!-- アキュムレータでグローバルカウンタを管理 -->
     <xsl:accumulator name="span-counter" as="xs:integer" initial-value="0"
         xmlns:xs="http://www.w3.org/2001/XMLSchema">
-        <xsl:accumulator-rule match="ruby | yomikae | seg | text()[normalize-space() and not(ancestor::ruby) and not(ancestor::yomikae) and not(ancestor::seg)]"
+        <xsl:accumulator-rule match="ruby | yomikae | seg | math | text()[normalize-space() and not(ancestor::ruby) and not(ancestor::yomikae) and not(ancestor::seg)]"
             select="$value + 1"/>
     </xsl:accumulator>
 
@@ -162,6 +162,18 @@
         <xsl:value-of select="."/>
     </xsl:template>
 
+    <!-- math要素: with-spanモードでspanでラップして出力（タイトル直下など） -->
+    <xsl:template match="math" mode="with-span">
+        <span data-index="{accumulator-before('span-counter')}">
+            <xsl:copy-of select="."/>
+        </span>
+    </xsl:template>
+
+    <!-- math要素: no-spanモードでそのまま出力 -->
+    <xsl:template match="math" mode="no-span">
+        <xsl:copy-of select="."/>
+    </xsl:template>
+
     <!-- seg-contentモード: seg内部用（yomikae読み情報を保持） -->
     <xsl:template match="ruby" mode="seg-content">
         <ruby>
@@ -192,6 +204,11 @@
 
     <xsl:template match="text()" mode="seg-content">
         <xsl:value-of select="."/>
+    </xsl:template>
+
+    <!-- math要素: seg-contentモードでそのまま出力 -->
+    <xsl:template match="math" mode="seg-content">
+        <xsl:copy-of select="."/>
     </xsl:template>
 
 </xsl:stylesheet>

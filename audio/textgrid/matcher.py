@@ -275,8 +275,11 @@ def _generate_span_element(el_id: str, text: str, is_xml: bool = False) -> str:
     if is_xml:
         # XMLの場合、すでにXHTMLタグを含んでいるのでそのまま使用
         return f'<span id="{el_id}">{text}</span>'
-    else:
-        return f'<span id="{el_id}">{escape_with_formatting(text)}</span>'
+    xhtml_content = escape_with_formatting(text)
+    # display="block" のMathML要素を含む場合、spanをブロック化しないとハイライトが効かない
+    if '<math display="block"' in xhtml_content:
+        return f'<span id="{el_id}" style="display:block;text-align:center">{xhtml_content}</span>'
+    return f'<span id="{el_id}">{xhtml_content}</span>'
 
 
 def _generate_smil_par(

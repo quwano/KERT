@@ -312,8 +312,25 @@ def strip_formatting_for_display(text: str) -> str:
         **重要** → 重要
         [text]{.underline} → text
         ![代替テキスト](path.png) → (除去)
+        $x^2$ → [数式] （数式プレースホルダーは表示用テキストに変換）
     """
+    import re as _re
     result = text
+    # 数式プレースホルダー: \x02MATH{idx}\x02 → "[数式]"（表示用フォールバック）
+    # （MathProcessorがあれば音声テキストを使用）
+    try:
+        from mathconv.converter import get_current_processor, MATH_PLACEHOLDER_PATTERN
+        math_proc = get_current_processor()
+        if math_proc:
+            def _math_to_display(m: _re.Match) -> str:
+                idx = int(m.group(1))
+                entry = math_proc.get_entry(idx)
+                return entry.speech if entry else "[数式]"
+            result = MATH_PLACEHOLDER_PATTERN.sub(_math_to_display, result)
+        else:
+            result = _re.sub(r'\x02MATH\d+\x02', '[数式]', result)
+    except ImportError:
+        result = _re.sub(r'\x02MATH\d+\x02', '[数式]', result)
     # 画像: ![alt](path) → (除去) ※他の記法より先に処理
     result = IMAGE_PATTERN.sub('', result)
     # Underline: [text]{.underline} → text
@@ -340,6 +357,7 @@ def create_reading_file(input_path: str, output_path: str) -> None:
     音声生成やMFAアライメント用に使用。
 
     処理される書式:
+    - 数式 $...$ / $$...$$ → SRE音声テキスト（MathProcessor設定時）
     - ルビ記法 [漢字](-ふりがな) → ふりがな
     - 下付き ~text~ → text
     - 上付き ^text^ → text
@@ -349,8 +367,24 @@ def create_reading_file(input_path: str, output_path: str) -> None:
     """
     with open(input_path, 'r', encoding='utf-8') as f:
         text = f.read()
+    # 数式を音声テキストに変換（見出しなしCommonMark用）
+    try:
+        from mathconv.converter import get_current_processor
+        math_proc = get_current_processor()
+        if math_proc:
+            text = math_proc.substitute(text)
+    except ImportError:
+        pass
     # 書式記法を除去
     result = strip_formatting(text)
+    # 数式プレースホルダーを音声テキストに展開
+    try:
+        from mathconv.converter import get_current_processor
+        math_proc = get_current_processor()
+        if math_proc:
+            result = math_proc.to_speech(result)
+    except ImportError:
+        pass
     # 特殊文字を読み仮名に変換（MFAアライメント用）
     result = TextNormalizer.to_reading(result)
     with open(output_path, 'w', encoding='utf-8') as f:

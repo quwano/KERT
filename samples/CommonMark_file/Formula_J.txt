@@ -1,0 +1,15 @@
+# 数式テスト
+## 解の公式
+$$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$
+## 二項定理
+$$(a + b)^n = \sum_{k=0}^{n} \binom{n}{k} a^{n-k} b^k$$
+## アインシュタインの質能等価性
+$$E = mc^2$$
+## ガウス積分
+$$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
+## 標準偏差（母標準偏差）
+$$\sigma = \sqrt{\frac{1}{N} \sum_{i=1}^{N} (x_i - \mu)^2}$$
+## シュレディンガー方程式
+$$i\hbar \frac{\partial}{\partial t} \Psi(\mathbf{r}, t) = \left[ -\frac{\hbar^2}{2m}\nabla^2 + V(\mathbf{r}, t) \right] \Psi(\mathbf{r}, t)$$
+## フーリエ変換
+$$F(\omega) = \int_{-\infty}^{\infty} f(t) e^{-i\omega t} dt$$

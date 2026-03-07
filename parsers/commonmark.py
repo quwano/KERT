@@ -143,11 +143,18 @@ def parse_commonmark(file_path: str) -> tuple[HeadingInfo | None, list[str]]:
     headings: list[HeadingInfo] = []
     current_heading: HeadingInfo | None = None
 
+    # 数式プレースホルダー置換（MathProcessorが設定されている場合）
+    from mathconv.converter import get_current_processor
+    math_proc = get_current_processor()
+
     for line in lines:
         heading_info = extract_heading(line)
 
         if heading_info:
             level, title = heading_info
+            # 数式を含む見出しのプレースホルダー置換
+            if math_proc:
+                title = math_proc.substitute(title)
             # title_xhtml: 書式タグ付きXHTML（h1-h5およびnav用）
             title_xhtml = process_title_for_xhtml(title)
             # title_plain: プレーンテキスト（書式除去、内部使用・読み上げ用）
@@ -166,6 +173,9 @@ def parse_commonmark(file_path: str) -> tuple[HeadingInfo | None, list[str]]:
         elif current_heading is not None:
             # 現在の見出しに段落を追加
             if line.strip():  # 空行以外
+                # 数式を含む段落のプレースホルダー置換
+                if math_proc:
+                    line = math_proc.substitute(line)
                 current_heading.content.append(line)
         # 見出しが出現する前の段落は無視（またはルートに追加する場合は別途処理）
 
@@ -293,7 +303,7 @@ def _process_line_for_reading(text: str) -> str:
     Parameters
     ----------
     text : str
-        元のテキスト行。
+        元のテキスト行（数式プレースホルダー \\x02MATH{idx}\\x02 を含む場合がある）。
 
     Returns
     -------
@@ -302,6 +312,11 @@ def _process_line_for_reading(text: str) -> str:
     """
     # すべての書式記法を除去して読み用テキストに変換
     result = strip_formatting(text)
+    # 数式プレースホルダーを音声テキストに展開
+    from mathconv.converter import get_current_processor
+    math_proc = get_current_processor()
+    if math_proc:
+        result = math_proc.to_speech(result)
     # 特殊文字を読み仮名に変換
     result = TextNormalizer.to_reading(result)
     return result

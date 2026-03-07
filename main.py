@@ -686,6 +686,10 @@ def _execute_processing(
     file_type = input_format.file_type_name
     file_ext = input_format.file_extension
 
+    # 数式サポートを初期化（ソース解析前に実行）
+    from mathconv.converter import init_math_support
+    init_math_support(lang_config.code if lang_config else "ja_JP")
+
     # ソースパス取得（引用符付き入力への対応: "path" や 'path' をトリム）
     source = _prompt_source_path(file_type, file_ext, is_folder=is_folder)
     source = source.strip().strip('"').strip("'")

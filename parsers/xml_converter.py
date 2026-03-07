@@ -27,6 +27,41 @@ class XmlSection:
     paragraphs_xhtml: list[str] = field(default_factory=list)  # 本文段落XHTML
 
 
+def _replace_math_with_yomikae(xml_text: str, sre_lang: str) -> str:
+    """XMLテキスト内の<math>要素をyomikae要素に置換する（audio.txt生成用）。
+
+    XSLT変換の前処理として呼び出します。yomikae要素の@yomi属性にSRE音声テキストを
+    設定することで、既存の audio.txt 変換XSLTがそのまま使用できます。
+
+    Parameters
+    ----------
+    xml_text : str
+        入力XMLテキスト。
+    sre_lang : str
+        SRE言語コード（"ja", "en", "de"など）。
+
+    Returns
+    -------
+    str
+        math要素をyomikae要素に置換したXMLテキスト。
+    """
+    import re as _re
+    from mathconv.converter import mathml_to_speech_xml
+
+    def replace_math(m: re.Match) -> str:
+        mathml = m.group(0)
+        speech = mathml_to_speech_xml(mathml, sre_lang)
+        # yomi属性値のXMLエスケープ
+        speech_escaped = (speech
+                          .replace('&', '&amp;')
+                          .replace('<', '&lt;')
+                          .replace('>', '&gt;')
+                          .replace('"', '&quot;'))
+        return f'<yomikae yomi="{speech_escaped}">数式</yomikae>'
+
+    return _re.sub(r'<math\b[^>]*>.*?</math>', replace_math, xml_text, flags=_re.DOTALL)
+
+
 def convert_xml_to_audio_txt(xml_path: str, output_path: str) -> None:
     """
     XMLファイルから読み上げ用テキスト（audio.txt）を生成する。
@@ -41,15 +76,27 @@ def convert_xml_to_audio_txt(xml_path: str, output_path: str) -> None:
     Notes
     -----
     XSLTによる変換ルール:
+    - math要素: Speech Rule Engineで音声テキストに変換（yomikaeとして処理）
     - ruby要素: @yomi属性値（読み仮名）を出力
     - yomikae要素: @yomi属性値（読み替え）を出力
     - title1-title5/p要素: 改行区切りで出力
     - その他の装飾要素: 要素内容のみ出力
     """
+    from mathconv.converter import get_current_processor
+
+    with open(xml_path, 'r', encoding='utf-8') as f:
+        xml_text = f.read()
+
+    # math要素をyomikae要素に置換してからXSLT変換（SRE使用）
+    math_proc = get_current_processor()
+    sre_lang = math_proc.sre_lang if math_proc else "ja"
+    xml_text = _replace_math_with_yomikae(xml_text, sre_lang)
+
     with PySaxonProcessor(license=False) as proc:
         xslt_proc = proc.new_xslt30_processor()
         executable = xslt_proc.compile_stylesheet(stylesheet_file=str(XSLT_AUDIO_TXT))
-        result = executable.transform_to_string(source_file=str(xml_path))
+        xdm_node = proc.parse_xml(xml_text=xml_text)
+        result = executable.transform_to_string(xdm_node=xdm_node)
 
         # 特殊文字を読み仮名に変換（MFAアライメント用）
         result = TextNormalizer.to_reading(result)

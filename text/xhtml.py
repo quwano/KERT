@@ -33,10 +33,22 @@ def normalize_xhtml_text(xhtml: str) -> str:
     Notes
     -----
     処理ルール:
+    - math要素: Speech Rule Engineで音声テキストに変換
     - ruby要素: rt（ルビ）部分のみ抽出、rb（親字）は除去
     - その他のタグ: 除去してテキスト内容のみ残す
     """
     result = xhtml
+
+    # math要素: SREで音声テキストに変換（TextGridマッチング用）
+    from mathconv.converter import get_current_processor, mathml_to_speech_xml
+    math_proc = get_current_processor()
+    sre_lang = math_proc.sre_lang if math_proc else "ja"
+
+    def _replace_math_with_speech(m: re.Match) -> str:
+        mathml = m.group(0)
+        return mathml_to_speech_xml(mathml, sre_lang)
+
+    result = re.sub(r'<math\b[^>]*>.*?</math>', _replace_math_with_speech, result, flags=re.DOTALL)
 
     # ruby要素: <ruby><rb>親字</rb><rt>読み</rt></ruby> → 読み
     result = re.sub(r'<ruby><rb>.*?</rb><rt>(.*?)</rt></ruby>', r'\1', result)
@@ -100,8 +112,27 @@ def xhtml_reading_pos_to_original(xhtml: str, reading_pos: int) -> int:
     original_pos = 0
     current_reading_pos = 0
 
+    # 数式プロセッサを一度だけ取得
+    from mathconv.converter import get_current_processor, mathml_to_speech_xml
+    _math_proc = get_current_processor()
+    _sre_lang = _math_proc.sre_lang if _math_proc else "ja"
+
     while current_reading_pos < reading_pos and original_pos < len(xhtml):
         remaining = xhtml[original_pos:]
+
+        # math要素のチェック: <math ...>...</math>（原子的に扱う）
+        math_match = re.match(r'<math\b[^>]*>.*?</math>', remaining, re.DOTALL)
+        if math_match:
+            mathml = math_match.group(0)
+            speech = mathml_to_speech_xml(mathml, _sre_lang)
+            reading_len = len(speech)
+            if current_reading_pos + reading_len <= reading_pos:
+                current_reading_pos += reading_len
+                original_pos += len(math_match.group(0))
+                continue
+            else:
+                # math要素内でreading_posに達した場合、要素全体を含める
+                break
 
         # ruby要素のチェック: <ruby><rb>...</rb><rt>...</rt></ruby>
         ruby_match = re.match(r'<ruby><rb>(.*?)</rb><rt>(.*?)</rt></ruby>', remaining)
