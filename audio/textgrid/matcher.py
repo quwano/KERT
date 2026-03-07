@@ -274,6 +274,9 @@ def _generate_span_element(el_id: str, text: str, is_xml: bool = False) -> str:
     """span要素を生成する。"""
     if is_xml:
         # XMLの場合、すでにXHTMLタグを含んでいるのでそのまま使用
+        # display="block" のMathML要素を含む場合、spanをブロック化しないとハイライトが効かない
+        if '<math' in text and 'display="block"' in text:
+            return f'<span id="{el_id}" style="display:block;text-align:center">{text}</span>'
         return f'<span id="{el_id}">{text}</span>'
     xhtml_content = escape_with_formatting(text)
     # display="block" のMathML要素を含む場合、spanをブロック化しないとハイライトが効かない
@@ -1551,7 +1554,11 @@ def process_xml_paragraph(
         el_id = f"{element_id_prefix}{span_id:04d}"
 
         # data-index="N" (+ optional data-yomi) を id="el_id" に置換
-        new_span = f'<span id="{el_id}">'
+        # display="block" のmath要素を含む場合はspanをブロック化（_generate_span_element と同様）
+        if '<math' in span_content and 'display="block"' in span_content:
+            new_span = f'<span id="{el_id}" style="display:block;text-align:center">'
+        else:
+            new_span = f'<span id="{el_id}">'
         result = result.replace(match.open_tag, new_span, 1)
 
         # TextGridインターバルを消費してspanの読みテキストをカバー
@@ -1587,7 +1594,7 @@ def process_xml_paragraph(
 
         while matched_text != span_reading_clean and tg_index < len(tg_intervals):
             tg_word, tg_begin, tg_end = tg_intervals[tg_index]
-            tg_word_norm = normalize_text(tg_word).lower()
+            tg_word_norm = _normalize_for_matching(normalize_text(tg_word).lower())
 
             # 空のインターバルはスキップ
             if not tg_word_norm:

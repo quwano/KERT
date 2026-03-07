@@ -27,6 +27,41 @@ class XmlSection:
     paragraphs_xhtml: list[str] = field(default_factory=list)  # 本文段落XHTML
 
 
+def _add_sre_speech_to_math(xml_text: str, sre_lang: str) -> str:
+    """XMLテキスト内の<math>要素にsre-speech属性を追加する（XHTML変換用）。
+
+    XSLT変換の前処理として呼び出します。math要素のsre-speech属性にSRE音声テキストを
+    設定することで、XSLTがdata-yomiとしてspan要素に伝達できます。
+
+    Parameters
+    ----------
+    xml_text : str
+        入力XMLテキスト。
+    sre_lang : str
+        SRE言語コード（"ja", "en", "de"など）。
+
+    Returns
+    -------
+    str
+        math要素にsre-speech属性を追加したXMLテキスト。
+    """
+    import re as _re
+    from mathconv.converter import mathml_to_speech_xml
+
+    def add_speech_attr(m: re.Match) -> str:
+        mathml = m.group(0)
+        speech = mathml_to_speech_xml(mathml, sre_lang)
+        speech_escaped = (speech
+                          .replace('&', '&amp;')
+                          .replace('<', '&lt;')
+                          .replace('>', '&gt;')
+                          .replace('"', '&quot;'))
+        # 開始タグの閉じ > の直前に sre-speech 属性を挿入
+        return _re.sub(r'(<math\b[^>]*)(>)', rf'\1 sre-speech="{speech_escaped}"\2', mathml, count=1)
+
+    return _re.sub(r'<math\b[^>]*>.*?</math>', add_speech_attr, xml_text, flags=_re.DOTALL)
+
+
 def _replace_math_with_yomikae(xml_text: str, sre_lang: str) -> str:
     """XMLテキスト内の<math>要素をyomikae要素に置換する（audio.txt生成用）。
 
@@ -119,6 +154,16 @@ def get_sections_from_xml(xml_path: str) -> list[XmlSection]:
     list[XmlSection]
         セクション情報のリスト。
     """
+    from mathconv.converter import get_current_processor
+
+    with open(xml_path, 'r', encoding='utf-8') as f:
+        xml_text = f.read()
+
+    # math要素にsre-speech属性を追加（XSLTでdata-yomiとして伝達、マッチング用）
+    math_proc = get_current_processor()
+    if math_proc:
+        xml_text = _add_sre_speech_to_math(xml_text, math_proc.sre_lang)
+
     with PySaxonProcessor(license=False) as proc:
         xslt_proc = proc.new_xslt30_processor()
 
@@ -127,7 +172,7 @@ def get_sections_from_xml(xml_path: str) -> list[XmlSection]:
         delimiter_regex = f"[{PUNCTUATION_CHARS}]"
         split_exec.set_parameter("delimiter-pattern",
                                  proc.make_string_value(delimiter_regex))
-        split_result = split_exec.transform_to_string(source_file=str(xml_path))
+        split_result = split_exec.transform_to_string(xdm_node=proc.parse_xml(xml_text=xml_text))
 
         # Step 2: 前処理済みXMLからXHTML変換
         xhtml_exec = xslt_proc.compile_stylesheet(stylesheet_file=str(XSLT_XHTML))

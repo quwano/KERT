@@ -22,7 +22,7 @@
     <!-- アキュムレータでグローバルカウンタを管理 -->
     <xsl:accumulator name="span-counter" as="xs:integer" initial-value="0"
         xmlns:xs="http://www.w3.org/2001/XMLSchema">
-        <xsl:accumulator-rule match="ruby | yomikae | seg | math | text()[normalize-space() and not(ancestor::ruby) and not(ancestor::yomikae) and not(ancestor::seg)]"
+        <xsl:accumulator-rule match="ruby | yomikae | seg | *:math | text()[normalize-space() and not(ancestor::ruby) and not(ancestor::yomikae) and not(ancestor::seg)]"
             select="$value + 1"/>
     </xsl:accumulator>
 
@@ -76,10 +76,21 @@
     </xsl:template>
 
     <!-- seg要素: spanでラップして内容を出力（yomikae読み情報を保持） -->
+    <!-- math要素を含む場合、data-yomiにSRE音声テキストを設定（マッチング用） -->
     <xsl:template match="seg" mode="with-span">
-        <span data-index="{accumulator-before('span-counter')}">
-            <xsl:apply-templates mode="seg-content"/>
-        </span>
+        <xsl:variable name="math-speech" select="descendant::*:math[1]/@sre-speech"/>
+        <xsl:choose>
+            <xsl:when test="$math-speech">
+                <span data-index="{accumulator-before('span-counter')}" data-yomi="{$math-speech}">
+                    <xsl:apply-templates mode="seg-content"/>
+                </span>
+            </xsl:when>
+            <xsl:otherwise>
+                <span data-index="{accumulator-before('span-counter')}">
+                    <xsl:apply-templates mode="seg-content"/>
+                </span>
+            </xsl:otherwise>
+        </xsl:choose>
     </xsl:template>
 
     <!-- u要素: XHTMLのuタグに変換（内部は再帰処理） -->
@@ -163,15 +174,23 @@
     </xsl:template>
 
     <!-- math要素: with-spanモードでspanでラップして出力（タイトル直下など） -->
-    <xsl:template match="math" mode="with-span">
+    <!-- *:math で任意名前空間のmath要素にマッチ（MathML名前空間対応） -->
+    <!-- sre-speech属性はマッチング用の内部属性のため出力から除外 -->
+    <xsl:template match="*:math" mode="with-span">
         <span data-index="{accumulator-before('span-counter')}">
-            <xsl:copy-of select="."/>
+            <xsl:copy>
+                <xsl:copy-of select="@* except @sre-speech"/>
+                <xsl:copy-of select="node()"/>
+            </xsl:copy>
         </span>
     </xsl:template>
 
     <!-- math要素: no-spanモードでそのまま出力 -->
-    <xsl:template match="math" mode="no-span">
-        <xsl:copy-of select="."/>
+    <xsl:template match="*:math" mode="no-span">
+        <xsl:copy>
+            <xsl:copy-of select="@* except @sre-speech"/>
+            <xsl:copy-of select="node()"/>
+        </xsl:copy>
     </xsl:template>
 
     <!-- seg-contentモード: seg内部用（yomikae読み情報を保持） -->
@@ -206,9 +225,12 @@
         <xsl:value-of select="."/>
     </xsl:template>
 
-    <!-- math要素: seg-contentモードでそのまま出力 -->
-    <xsl:template match="math" mode="seg-content">
-        <xsl:copy-of select="."/>
+    <!-- math要素: seg-contentモードでそのまま出力（sre-speech属性は除外） -->
+    <xsl:template match="*:math" mode="seg-content">
+        <xsl:copy>
+            <xsl:copy-of select="@* except @sre-speech"/>
+            <xsl:copy-of select="node()"/>
+        </xsl:copy>
     </xsl:template>
 
 </xsl:stylesheet>
