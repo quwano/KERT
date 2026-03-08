@@ -66,6 +66,13 @@
                     </xsl:for-each>
                 </xsl:when>
 
+                <!-- img要素: @alt属性値を出力 -->
+                <xsl:when test="self::img">
+                    <xsl:if test="@alt and normalize-space(@alt) != ''">
+                        <xsl:value-of select="@alt"/>
+                    </xsl:if>
+                </xsl:when>
+
                 <!-- テキストノード -->
                 <xsl:when test="self::text()">
                     <xsl:variable name="text" select="replace(., '\s+', ' ')"/>
@@ -100,6 +107,12 @@
                         <xsl:value-of select="."/>
                     </xsl:otherwise>
                 </xsl:choose>
+            </xsl:when>
+
+            <xsl:when test="self::img">
+                <xsl:if test="@alt and normalize-space(@alt) != ''">
+                    <xsl:value-of select="@alt"/>
+                </xsl:if>
             </xsl:when>
 
             <xsl:when test="self::text()">

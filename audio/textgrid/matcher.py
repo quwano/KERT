@@ -1417,6 +1417,7 @@ def _extract_span_reading(span_content: str) -> str:
 
     ruby要素の場合はrt部分（読み仮名）を、
     yomikae要素（data-yomi属性付きspan）の場合はdata-yomi値を、
+    img要素の場合はalt属性値を、
     それ以外はテキスト内容を返す。
     """
     import re
@@ -1424,6 +1425,9 @@ def _extract_span_reading(span_content: str) -> str:
     result = re.sub(r'<ruby><rb>.*?</rb><rt>(.*?)</rt></ruby>', r'\1', span_content)
     # yomikae要素（seg内）: <span data-yomi="読み">表示</span> → 読み
     result = re.sub(r'<span data-yomi="([^"]*)">.*?</span>', r'\1', result)
+    # img要素: alt属性値を抽出して置換（タグ除去前に処理）
+    result = re.sub(r'<img\b[^>]*\balt="([^"]*)"[^>]*/>', r'\1', result)
+    result = re.sub(r'<img\b[^>]*/>', '', result)  # alt属性なし
     # その他すべてのタグを除去
     result = re.sub(r'<[^>]+>', '', result)
     return result.lower()

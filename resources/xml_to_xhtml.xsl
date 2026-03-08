@@ -22,7 +22,7 @@
     <!-- アキュムレータでグローバルカウンタを管理 -->
     <xsl:accumulator name="span-counter" as="xs:integer" initial-value="0"
         xmlns:xs="http://www.w3.org/2001/XMLSchema">
-        <xsl:accumulator-rule match="ruby | yomikae | seg | *:math | text()[normalize-space() and not(ancestor::ruby) and not(ancestor::yomikae) and not(ancestor::seg)]"
+        <xsl:accumulator-rule match="ruby | yomikae | seg | *:math | img | text()[normalize-space() and not(ancestor::ruby) and not(ancestor::yomikae) and not(ancestor::seg)]"
             select="$value + 1"/>
     </xsl:accumulator>
 
@@ -113,6 +113,13 @@
         <sup><xsl:apply-templates mode="with-span"/></sup>
     </xsl:template>
 
+    <!-- img要素: spanでラップ -->
+    <xsl:template match="img" mode="with-span">
+        <span data-index="{accumulator-before('span-counter')}">
+            <img src="{@src}" alt="{if (@alt) then @alt else ''}"/>
+        </span>
+    </xsl:template>
+
     <!-- テキストノード: spanでラップ -->
     <xsl:template match="text()[normalize-space()]" mode="with-span">
         <xsl:choose>
@@ -173,6 +180,11 @@
         <xsl:value-of select="."/>
     </xsl:template>
 
+    <!-- img要素: no-spanモード -->
+    <xsl:template match="img" mode="no-span">
+        <img src="{@src}" alt="{if (@alt) then @alt else ''}"/>
+    </xsl:template>
+
     <!-- math要素: with-spanモードでspanでラップして出力（タイトル直下など） -->
     <!-- *:math で任意名前空間のmath要素にマッチ（MathML名前空間対応） -->
     <!-- sre-speech属性はマッチング用の内部属性のため出力から除外 -->
@@ -223,6 +235,11 @@
 
     <xsl:template match="text()" mode="seg-content">
         <xsl:value-of select="."/>
+    </xsl:template>
+
+    <!-- img要素: seg-contentモード -->
+    <xsl:template match="img" mode="seg-content">
+        <img src="{@src}" alt="{if (@alt) then @alt else ''}"/>
     </xsl:template>
 
     <!-- math要素: seg-contentモードでそのまま出力（sre-speech属性は除外） -->

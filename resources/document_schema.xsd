@@ -40,6 +40,12 @@
   </xs:element>
   <xs:element name="u" type="rich_text"/>
   <xs:element name="g" type="rich_text"/>
+  <xs:element name="img">
+    <xs:complexType>
+      <xs:attribute name="src" type="xs:string" use="required"/>
+      <xs:attribute name="alt" type="xs:string" use="optional"/>
+    </xs:complexType>
+  </xs:element>
   <xs:complexType mixed="true" name="rich_text">
     <xs:choice maxOccurs="unbounded" minOccurs="0">
       <xs:element ref="sub"/>
@@ -48,6 +54,7 @@
       <xs:element ref="ruby"/>
       <xs:element ref="g"/>
       <xs:element ref="u"/>
+      <xs:element ref="img"/>
     </xs:choice>
   </xs:complexType>
 </xs:schema>

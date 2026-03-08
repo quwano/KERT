@@ -144,6 +144,9 @@ def package_epub(output_epub: str, oebps: Path, meta_inf: Path) -> None:
 # 画像記法のパターン: ![代替テキスト](パス)
 _IMAGE_PATTERN = re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
 
+# XHTMLの<img>タグのパターン: <img src="../images/filename" ...>
+_XHTML_IMG_PATTERN = re.compile(r'<img\b[^>]*\bsrc="../images/([^"]+)"')
+
 
 def extract_and_copy_images(
     paragraphs: list[str],
@@ -169,9 +172,9 @@ def extract_and_copy_images(
     """
     image_filenames: list[str] = []
     full_text = "\n".join(paragraphs)
-    image_refs = _IMAGE_PATTERN.findall(full_text)  # [(alt, path), ...]
 
-    for alt, img_path in image_refs:
+    # Markdown画像: ![alt](path)
+    for alt, img_path in _IMAGE_PATTERN.findall(full_text):
         img_source = source_dir / img_path
         if img_source.exists():
             filename = img_source.name
@@ -180,5 +183,19 @@ def extract_and_copy_images(
                 image_filenames.append(filename)
         else:
             logger.warning(f"画像ファイルが見つかりません: {img_source}")
+
+    # XHTML <img src="../images/..."> タグ（XML入力由来）
+    for filename in _XHTML_IMG_PATTERN.findall(full_text):
+        if filename in image_filenames:
+            continue
+        # source_dir/images/filename → source_dir/filename の順で検索
+        img_source = source_dir / "images" / filename
+        if not img_source.exists():
+            img_source = source_dir / filename
+        if img_source.exists():
+            shutil.copy(img_source, oebps / "images" / filename)
+            image_filenames.append(filename)
+        else:
+            logger.warning(f"画像ファイルが見つかりません: {source_dir / 'images' / filename}")
 
     return image_filenames

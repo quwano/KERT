@@ -276,11 +276,11 @@ def strip_formatting(text: str) -> str:
         2^10^ → 210
         **重要** → 重要
         [text]{.underline} → text
-        ![代替テキスト](path.png) → (除去)
+        ![代替テキスト](path.png) → 代替テキスト
     """
     result = text
-    # 画像: ![alt](path) → (除去) ※他の記法より先に処理
-    result = IMAGE_PATTERN.sub('', result)
+    # 画像: ![alt](path) → alt テキスト ※他の記法より先に処理
+    result = IMAGE_PATTERN.sub(r'\1', result)
     # Underline: [text]{.underline} → text
     result = UNDERLINE_PATTERN.sub(r'\1', result)
     # Frame: [text]{.frame} → text

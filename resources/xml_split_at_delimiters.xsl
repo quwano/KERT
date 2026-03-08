@@ -112,4 +112,11 @@
         </xsl:copy>
     </xsl:template>
 
+    <!-- img: 原子的要素として扱い、自身の後に seg-marker を挿入 -->
+    <!-- これにより img が独自の <seg> を持ち、単独の span になる -->
+    <xsl:template match="img">
+        <xsl:copy-of select="."/>
+        <seg-marker/>
+    </xsl:template>
+
 </xsl:stylesheet>
