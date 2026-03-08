@@ -279,19 +279,29 @@ The root element is `<root>`, with heading elements (`title1` to `title5`) and p
 
 #### Element List
 
-| Element | Description | Example |
-|---------|-------------|---------|
-| `<p>` | Paragraph | `<p>Body text</p>` |
-| `<title1>` to `<title5>` | Heading (level 1-5) | `<title1>Title</title1>` |
-| `<ruby yomi="reading">base text</ruby>` | Ruby | `<ruby yomi="reading">kanji</ruby>` |
-| `<yomikae yomi="reading">display</yomikae>` | Alternative reading | `<yomikae yomi="read">display</yomikae>` |
-| `<u>` | Underline | `<u>underlined text</u>` |
-| `<g>` | Emphasis (bold) | `<g>emphasized text</g>` |
-| `<sub>` | Subscript | `<sub>2</sub>` |
-| `<sup>` | Superscript | `<sup>3</sup>` |
-| `<math>` | MathML formula | `<math xmlns="...">...</math>` |
+| Element | Description | Example                                      |
+|---------|-------------|----------------------------------------------|
+| `<p>` | Paragraph | `<p>Body text</p>`                           |
+| `<title1>` to `<title5>` | Heading (level 1-5) | `<title1>Title</title1>`                     |
+| `<ruby yomi="reading">base text</ruby>` | Ruby | `<ruby yomi="reading">kanji</ruby>`          |
+| `<yomikae yomi="reading">display</yomikae>` | Alternative reading | `<yomikae yomi="read">display</yomikae>`     |
+| `<u>` | Underline | `<u>underlined text</u>`                     |
+| `<g>` | Emphasis (bold) | `<g>emphasized text</g>`                     |
+| `<sub>` | Subscript | `<sub>2</sub>`                               |
+| `<sup>` | Superscript | `<sup>3</sup>`                               |
+| `<math>` | MathML formula | `<math xmlns="...">...</math>`               |
 
 - Decoration elements can be nested. Example: `<u><g>bold underline</g></u>`
+
+#### Inserting Images
+
+```xml
+<img src="photo.jpg" alt="A little bird"/>
+```
+
+- Place image files in the same directory as the input file, or specify a relative path.
+- Images are copied to the `images/` directory within the EPUB.
+- Supported formats: SVG, PNG, JPEG, GIF, WebP
 
 #### Heading Hierarchy (title1 to title5)
 
