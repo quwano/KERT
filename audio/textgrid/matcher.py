@@ -332,6 +332,9 @@ def has_unclosed_formatting(text: str) -> bool:
     # ルビ記法を除去（ルビは必ず閉じているので）
     temp = RUBY_PATTERN.sub('', text)
 
+    # 画像記法を除去（![alt](path) の [ が未閉じと誤判定されないように）
+    temp = IMAGE_PATTERN.sub('', temp)
+
     # 読み替え記法を除去（2026-01-28追加）
     # CommonMarkで読み替え記法 [表示](+読み) を使用した場合、
     # この記法の [ が残ると「未閉じ」と誤判定され、
@@ -1807,11 +1810,6 @@ def process_paragraph(
             paragraph, tg_intervals, tg_index, span_id,
             element_id_prefix, xhtml_path, audio_filename
         )
-
-    # 画像のみの段落: imgタグのみを生成、SMILは空
-    if _is_image_only_paragraph(paragraph):
-        xhtml_paragraph = _generate_image_only_paragraph(paragraph)
-        return xhtml_paragraph, [], span_id, tg_index
 
     # 段落の最初の単語を探して tg_index を再同期
     # これにより、前の段落でマッチングが失敗しても次の段落で回復できる

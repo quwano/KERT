@@ -486,6 +486,24 @@ def reading_pos_to_original(text: str, reading_pos: int) -> int:
                 # ^の後 + 内部位置
                 return original_pos + 1 + inner_pos
 
+        # 画像記法のチェック: ![alt](path) （atomic に扱う）
+        image_match = IMAGE_PATTERN.match(remaining)
+        if image_match:
+            alt_text = image_match.group(1)
+            reading_len = _get_reading_len(alt_text)
+            image_len = len(image_match.group(0))
+            if current_reading_pos + reading_len <= reading_pos and not at_target:
+                # 画像全体をスキップ（reading_pos が alt テキスト末尾以降）
+                current_reading_pos += reading_len
+                original_pos += image_len
+                continue
+            elif at_target:
+                # 画像先頭に到達 → '!' の位置を返す（orig_start 用）
+                break
+            else:
+                # alt テキスト内部 → 画像末尾位置を返す（orig_end 用）
+                return original_pos + image_len
+
         # READING_MAP文字のチェック（丸数字・ローマ数字・丸囲み英字など）
         # これらは1文字が複数文字の読みに展開される
         current_char = text[original_pos] if original_pos < len(text) else ''

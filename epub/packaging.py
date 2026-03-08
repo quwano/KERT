@@ -175,14 +175,17 @@ def extract_and_copy_images(
 
     # Markdown画像: ![alt](path)
     for alt, img_path in _IMAGE_PATTERN.findall(full_text):
+        filename = Path(img_path).name
         img_source = source_dir / img_path
+        if not img_source.exists():
+            # フォールバック: source_dir/images/{filename} を検索
+            img_source = source_dir / "images" / filename
         if img_source.exists():
-            filename = img_source.name
             if filename not in image_filenames:
                 shutil.copy(img_source, oebps / "images" / filename)
                 image_filenames.append(filename)
         else:
-            logger.warning(f"画像ファイルが見つかりません: {img_source}")
+            logger.warning(f"画像ファイルが見つかりません: {source_dir / img_path}")
 
     # XHTML <img src="../images/..."> タグ（XML入力由来）
     for filename in _XHTML_IMG_PATTERN.findall(full_text):
