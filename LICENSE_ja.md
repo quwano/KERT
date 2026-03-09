@@ -1,6 +1,6 @@
 # ライセンス・権利情報
 
-**[English](./LICENSE.md)** | **日本語**
+**[English](./LICENSE.md)** | **日本語** | **[Deutsch](./LICENSE_de.md)**
 
 ## 本プロジェクトのライセンス
 

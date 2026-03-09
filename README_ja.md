@@ -1,6 +1,6 @@
 # KERT - EPUB3 & DAISY4 Support Tool
 
-**[English](./README.md)** | **日本語**
+**[English](./README.md)** | **日本語** | **[Deutsch](./README_de.md)**
 
 ![version](https://img.shields.io/github/v/release/quwano/KERT?label=version&color=brightgreen)
 ![license](https://img.shields.io/badge/license-GPL-green)

@@ -1,6 +1,6 @@
 # License and Rights Information
 
-**English** | **[日本語](./LICENSE_ja.md)**
+**English** | **[日本語](./LICENSE_ja.md)** | **[Deutsch](./LICENSE_de.md)**
 
 ## Project License
 
