@@ -24,6 +24,14 @@ KERT は、テキストファイルから **Media Overlay（音声同期）付�
 EPUB3 ファイル（音声同期付き）
 ```
 
+## 簡単インストール
+
+macOS・Windows 向けのインストーラスクリプトを `easy_installer/` フォルダに用意しています。
+
+OS・言語に合ったインストーラの選び方は **[`easy_installer/INSTALL_GUIDE.md`](./easy_installer/INSTALL_GUIDE.md)** を参照してください。
+
+手動でインストールする場合は、[必要な環境](#必要な環境) の手順に従ってください。
+
 ## 必要な環境
 
 ### Python

@@ -24,6 +24,14 @@ Eingabedatei (.txt / .md / .xml)
 EPUB3-Datei (mit Audiosynchronisierung)
 ```
 
+## Schnellinstallation
+
+Installationsskripte für macOS und Windows befinden sich im Ordner `easy_installer/`.
+
+Welcher Installer für Ihr Betriebssystem und Ihre Sprache geeignet ist, erfahren Sie unter **[`easy_installer/INSTALL_GUIDE.md`](./easy_installer/INSTALL_GUIDE.md)**.
+
+Für die manuelle Installation folgen Sie den Schritten unter [Voraussetzungen](#voraussetzungen).
+
 ## Voraussetzungen
 
 ### Python

@@ -1,0 +1,551 @@
+#!/bin/bash
+# KERT macOS セットアップ インストーラー（Homebrew あり版）
+# 対応: macOS 11 以降（Apple Silicon / Intel 両対応）
+
+# ============================================================
+# カラー定義
+# ============================================================
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+ARCH=$(uname -m)   # arm64 or x86_64
+
+# ============================================================
+# ユーティリティ関数
+# ============================================================
+
+write_header() {
+    clear
+    echo ""
+    echo -e "${CYAN}-----------------------------------------------------------${NC}"
+    echo -e "${CYAN}  $1${NC}"
+    echo -e "${CYAN}-----------------------------------------------------------${NC}"
+    echo ""
+}
+
+ask_continue() {
+    echo ""
+    local _ac_choice
+    while true; do
+        read -rp "次のステップへ進みますか？ (Y=続ける / N=中止): " _ac_choice
+        _ac_choice=$(echo "$_ac_choice" | tr '[:lower:]' '[:upper:]')
+        [[ "$_ac_choice" == "Y" || "$_ac_choice" == "N" ]] && break
+    done
+    if [[ "$_ac_choice" == "N" ]]; then
+        show_abort
+        exit 1
+    fi
+}
+
+show_abort() {
+    clear
+    echo ""
+    echo -e "${YELLOW}===========================================================${NC}"
+    echo -e "${YELLOW}   セットアップを中止しました${NC}"
+    echo -e "${YELLOW}===========================================================${NC}"
+    echo ""
+    echo "セットアップを中止しました。"
+    echo "途中までのインストールは有効です。"
+    echo "続きから再開するには、このスクリプトを再度実行してください。"
+    echo "（完了済みのステップは自動的にスキップされます）"
+    echo ""
+    read -rp "Enterキーを押して終了"
+}
+
+# シェルプロファイルに PATH を永続登録する
+add_to_path_persistent() {
+    local new_path="$1"
+    local shell_profile
+    if [[ "$SHELL" == *"zsh"* ]]; then
+        shell_profile="$HOME/.zshrc"
+    else
+        shell_profile="$HOME/.bash_profile"
+    fi
+
+    if ! grep -qF "$new_path" "$shell_profile" 2>/dev/null; then
+        echo "" >> "$shell_profile"
+        echo "export PATH=\"$new_path:\$PATH\"" >> "$shell_profile"
+        echo "[完了] PATH への永続登録が完了しました: $new_path"
+        echo "       設定ファイル: $shell_profile"
+    else
+        echo "[OK] PATH にすでに登録されています: $new_path"
+    fi
+
+    # 現在のセッションにも反映
+    export PATH="$new_path:$PATH"
+}
+
+# brew コマンドのフルパスを返す（なければ空文字）
+resolve_brew() {
+    if command -v brew &>/dev/null; then
+        command -v brew
+    elif [ -f "/opt/homebrew/bin/brew" ]; then
+        echo "/opt/homebrew/bin/brew"
+    elif [ -f "/usr/local/bin/brew" ]; then
+        echo "/usr/local/bin/brew"
+    else
+        echo ""
+    fi
+}
+
+# conda コマンドのフルパスを返す（なければ空文字）
+resolve_conda() {
+    if command -v conda &>/dev/null; then
+        command -v conda
+        return
+    fi
+
+    # brew cask miniforge のインストール先を確認
+    local brew_cmd
+    brew_cmd=$(resolve_brew)
+    if [ -n "$brew_cmd" ]; then
+        local brew_prefix
+        brew_prefix=$("$brew_cmd" --prefix 2>/dev/null)
+        local cask_conda="$brew_prefix/Caskroom/miniforge/base/bin/conda"
+        if [ -f "$cask_conda" ]; then
+            echo "$cask_conda"
+            return
+        fi
+    fi
+
+    # 直接インストール版も確認
+    for candidate in \
+        "$HOME/miniforge3/bin/conda" \
+        "$HOME/miniconda3/bin/conda" \
+        "$HOME/anaconda3/bin/conda"; do
+        if [ -f "$candidate" ]; then
+            echo "$candidate"
+            return
+        fi
+    done
+
+    echo ""
+}
+
+# conda bin ディレクトリを返す
+resolve_conda_bin_dir() {
+    local conda_cmd
+    conda_cmd=$(resolve_conda)
+    if [ -n "$conda_cmd" ]; then
+        dirname "$conda_cmd"
+    else
+        echo ""
+    fi
+}
+
+# ============================================================
+# ウェルカム画面
+# ============================================================
+clear
+echo ""
+echo -e "${GREEN}===========================================================${NC}"
+echo -e "${GREEN}   KERT セットアップ インストーラー（macOS / Homebrew あり版）${NC}"
+echo -e "${GREEN}   このスクリプトは KERT の動作環境を順番に構築します${NC}"
+echo -e "${GREEN}===========================================================${NC}"
+echo ""
+echo "【全インストール手順一覧】"
+echo ""
+echo "  ステップ 1   Homebrew のインストール確認"
+echo "  ステップ 2   Python 3.12 のインストール"
+echo "  ステップ 3   Miniforge（conda）のインストール"
+echo "  ステップ 4   conda の PATH 設定確認"
+echo "  ステップ 5   Montreal Forced Aligner（MFA）のインストール"
+echo "  ステップ 6   spacy / sudachipy / sudachidict_core のインストール"
+echo "  ステップ 7   VOICEVOX のインストール（手動）"
+echo "  ステップ 8   FFmpeg のインストール"
+echo "  ステップ 9   textgrid / saxonche のインストール"
+echo "  ステップ 10  日本語 MFA モデルのダウンロード"
+echo ""
+echo "各ステップの最後に「続けるか中止するか」を確認します。"
+echo "N を押すといつでも中止できます。"
+echo ""
+echo "動作環境: $(uname -s) $(uname -r) (${ARCH})"
+echo ""
+read -rp "Enterキーを押してインストールを開始"
+
+# ============================================================
+# ステップ 1: Homebrew
+# ============================================================
+write_header "ステップ 1 / 10  :  Homebrew のインストール確認"
+
+BREW_CMD=$(resolve_brew)
+
+if [ -n "$BREW_CMD" ]; then
+    echo "[OK] Homebrew はすでにインストールされています。スキップします。"
+    "$BREW_CMD" --version
+else
+    echo "Homebrew が見つかりません。公式インストーラーを実行します。"
+    echo ""
+    echo "注意: インストール中にシステムパスワードの入力が求められます。"
+    echo "      Xcode Command Line Tools のインストールも自動で行われます（初回のみ数分かかります）。"
+    echo ""
+
+    if /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"; then
+        echo ""
+        echo "[完了] Homebrew のインストールが完了しました。"
+
+        # Apple Silicon の場合は /opt/homebrew/bin を PATH に追加
+        if [ "$ARCH" = "arm64" ] && [ -f "/opt/homebrew/bin/brew" ]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+            add_to_path_persistent "/opt/homebrew/bin"
+        fi
+
+        BREW_CMD=$(resolve_brew)
+        if [ -n "$BREW_CMD" ]; then
+            "$BREW_CMD" --version
+        fi
+    else
+        echo ""
+        echo -e "${RED}[エラー] Homebrew のインストールに失敗しました。${NC}"
+        echo "手動でインストールしてください:"
+        echo "  https://brew.sh/"
+        echo ""
+    fi
+fi
+
+ask_continue
+
+# ============================================================
+# ステップ 2: Python 3.12
+# ============================================================
+write_header "ステップ 2 / 10  :  Python 3.12 のインストール"
+
+BREW_CMD=$(resolve_brew)
+
+if python3.12 --version &>/dev/null; then
+    echo "[OK] Python 3.12 はすでにインストールされています。スキップします。"
+    python3.12 --version
+elif [ -z "$BREW_CMD" ]; then
+    echo -e "${RED}[エラー] Homebrew が見つかりません。ステップ 1 を確認してください。${NC}"
+else
+    echo "Python 3.12 が見つかりません。Homebrew でインストールします..."
+    echo ""
+    if "$BREW_CMD" install python@3.12; then
+        echo ""
+        echo "[完了] Python 3.12 のインストールが完了しました。"
+
+        # brew の bin を PATH に追加（python3.12 が見えるようにする）
+        BREW_PREFIX=$("$BREW_CMD" --prefix)
+        add_to_path_persistent "$BREW_PREFIX/bin"
+        python3.12 --version 2>/dev/null || true
+    else
+        echo ""
+        echo -e "${RED}[エラー] Python 3.12 のインストールに失敗しました。${NC}"
+        echo "Homebrew が正しくインストールされているか確認してください。"
+        echo ""
+    fi
+fi
+
+ask_continue
+
+# ============================================================
+# ステップ 3: Miniforge（conda）
+# ============================================================
+write_header "ステップ 3 / 10  :  Miniforge（conda）のインストール"
+
+BREW_CMD=$(resolve_brew)
+CONDA_CMD=$(resolve_conda)
+
+if [ -n "$CONDA_CMD" ]; then
+    echo "[OK] conda はすでに使用可能です。スキップします。"
+    "$CONDA_CMD" --version
+elif [ -z "$BREW_CMD" ]; then
+    echo -e "${RED}[エラー] Homebrew が見つかりません。ステップ 1 を確認してください。${NC}"
+else
+    echo "Miniforge が見つかりません。Homebrew でインストールします..."
+    echo "（処理に数分かかる場合があります）"
+    echo ""
+    if "$BREW_CMD" install --cask miniforge; then
+        echo ""
+        echo "[完了] Miniforge のインストールが完了しました。"
+
+        # インストール後に conda を PATH に反映
+        BREW_PREFIX=$("$BREW_CMD" --prefix)
+        CASK_CONDA_BIN="$BREW_PREFIX/Caskroom/miniforge/base/bin"
+        if [ -d "$CASK_CONDA_BIN" ]; then
+            export PATH="$CASK_CONDA_BIN:$PATH"
+            echo "PATH を更新しました（このセッション内）。"
+        fi
+
+        CONDA_CMD=$(resolve_conda)
+        if [ -n "$CONDA_CMD" ]; then
+            "$CONDA_CMD" --version
+        fi
+    else
+        echo ""
+        echo -e "${RED}[エラー] Miniforge のインストールに失敗しました。${NC}"
+        echo "Homebrew が正しくインストールされているか確認してください。"
+        echo ""
+    fi
+fi
+
+ask_continue
+
+# ============================================================
+# ステップ 4: conda PATH 設定確認
+# ============================================================
+write_header "ステップ 4 / 10  :  conda の PATH 設定確認"
+
+CONDA_CMD=$(resolve_conda)
+
+if [ -n "$CONDA_CMD" ]; then
+    echo "[OK] conda は使用可能です。"
+    "$CONDA_CMD" --version
+
+    CONDA_BIN_DIR=$(resolve_conda_bin_dir)
+    if [ -n "$CONDA_BIN_DIR" ]; then
+        shell_profile=""
+        if [[ "$SHELL" == *"zsh"* ]]; then
+            shell_profile="$HOME/.zshrc"
+        else
+            shell_profile="$HOME/.bash_profile"
+        fi
+
+        if ! grep -qF "$CONDA_BIN_DIR" "$shell_profile" 2>/dev/null && \
+           ! grep -q "conda initialize" "$shell_profile" 2>/dev/null; then
+            add_to_path_persistent "$CONDA_BIN_DIR"
+        else
+            echo "[OK] PATH またはシェル初期化設定はすでに済んでいます。"
+        fi
+    fi
+else
+    echo -e "${YELLOW}[警告] conda が見つかりませんでした。${NC}"
+    echo "ステップ 3 に戻って Miniforge をインストールしてください。"
+    echo ""
+fi
+
+ask_continue
+
+# ============================================================
+# ステップ 5: Montreal Forced Aligner（MFA）
+# ============================================================
+write_header "ステップ 5 / 10  :  Montreal Forced Aligner のインストール"
+
+CONDA_CMD=$(resolve_conda)
+
+if [ -z "$CONDA_CMD" ]; then
+    echo -e "${RED}[エラー] conda が見つかりません。ステップ 3・4 を確認してください。${NC}"
+else
+    echo "MFA の conda 環境（mfa）を確認しています..."
+    echo ""
+
+    if "$CONDA_CMD" run -n mfa echo check &>/dev/null 2>&1; then
+        if "$CONDA_CMD" run -n mfa mfa version &>/dev/null 2>&1; then
+            echo "[OK] MFA はすでにインストールされています。スキップします。"
+            "$CONDA_CMD" run -n mfa mfa version
+        else
+            echo "MFA が見つかりません。mfa 環境にインストールします..."
+            if "$CONDA_CMD" install -n mfa -c conda-forge montreal-forced-aligner -y; then
+                echo ""
+                echo "[完了] Montreal Forced Aligner のインストールが完了しました。"
+            else
+                echo ""
+                echo -e "${RED}[エラー] MFA のインストールに失敗しました。${NC}"
+                echo "conda が正しくインストールされ、インターネットに接続されているか確認してください。"
+                echo ""
+            fi
+        fi
+    else
+        echo "conda 環境 \"mfa\" が存在しません。新規作成してインストールします..."
+        echo "（処理に数分かかる場合があります）"
+        if "$CONDA_CMD" create -n mfa -c conda-forge montreal-forced-aligner -y; then
+            echo ""
+            echo "[完了] Montreal Forced Aligner のインストールが完了しました。"
+        else
+            echo ""
+            echo -e "${RED}[エラー] MFA のインストールに失敗しました。${NC}"
+            echo "conda が正しくインストールされ、インターネットに接続されているか確認してください。"
+            echo ""
+        fi
+    fi
+fi
+
+ask_continue
+
+# ============================================================
+# ステップ 6: spacy / sudachipy / sudachidict_core
+# ============================================================
+write_header "ステップ 6 / 10  :  spacy 等のインストール"
+
+CONDA_CMD=$(resolve_conda)
+
+if [ -z "$CONDA_CMD" ]; then
+    echo -e "${RED}[エラー] conda が見つかりません。ステップ 3・4 を確認してください。${NC}"
+else
+    echo "mfa 環境内に spacy / sudachipy / sudachidict_core をインストールします..."
+    echo "（処理に数分かかる場合があります）"
+    echo ""
+
+    if "$CONDA_CMD" run -n mfa pip install spacy sudachipy sudachidict_core; then
+        echo ""
+        echo "[完了] spacy / sudachipy / sudachidict_core のインストールが完了しました。"
+    else
+        echo ""
+        echo -e "${RED}[エラー] インストールに失敗しました。${NC}"
+        echo "MFA 環境（ステップ 5）が正常か確認してください。"
+        echo ""
+    fi
+fi
+
+ask_continue
+
+# ============================================================
+# ステップ 7: VOICEVOX（手動インストール）
+# ============================================================
+write_header "ステップ 7 / 10  :  VOICEVOX のインストール（手動）"
+
+echo "VOICEVOX はグラフィカルインストーラーのため、手動でのインストールが必要です。"
+echo ""
+echo "【手順】"
+echo "  1. ブラウザで https://voicevox.hiroshiba.jp/ を開く"
+echo "  2. ページ上の「ダウンロード」ボタンをクリック"
+echo "  3. macOS 版をダウンロードして実行"
+echo "  4. インストール後、VOICEVOX を起動する"
+echo "  5. メニューバーに VOICEVOX のアイコンが表示されれば起動完了"
+echo ""
+echo "KERT の日本語処理（ja_JP モード）には VOICEVOX の起動が必要です。"
+echo "英語・ドイツ語のみ使用する場合はスキップしても構いません。"
+echo ""
+
+VV_CHOICE=""
+while true; do
+    read -rp "ブラウザで VOICEVOX の公式サイトを開きますか？ (Y=開く / N=スキップ): " VV_CHOICE
+    VV_CHOICE=$(echo "$VV_CHOICE" | tr '[:lower:]' '[:upper:]')
+    [[ "$VV_CHOICE" == "Y" || "$VV_CHOICE" == "N" ]] && break
+done
+
+if [[ "$VV_CHOICE" == "Y" ]]; then
+    open "https://voicevox.hiroshiba.jp/"
+    echo ""
+    echo "ブラウザを開きました。インストールと起動が完了したら続けてください。"
+fi
+
+ask_continue
+
+# ============================================================
+# ステップ 8: FFmpeg
+# ============================================================
+write_header "ステップ 8 / 10  :  FFmpeg のインストール"
+
+BREW_CMD=$(resolve_brew)
+
+if command -v ffmpeg &>/dev/null; then
+    echo "[OK] FFmpeg はすでに PATH に登録されています。スキップします。"
+    ffmpeg -version 2>&1 | grep "ffmpeg version" | head -1
+elif [ -z "$BREW_CMD" ]; then
+    echo -e "${RED}[エラー] Homebrew が見つかりません。ステップ 1 を確認してください。${NC}"
+else
+    echo "FFmpeg が見つかりません。Homebrew でインストールします..."
+    echo ""
+    if "$BREW_CMD" install ffmpeg; then
+        echo ""
+        echo "[完了] FFmpeg のインストールが完了しました。"
+        ffmpeg -version 2>&1 | grep "ffmpeg version" | head -1 || true
+    else
+        echo ""
+        echo -e "${RED}[エラー] FFmpeg のインストールに失敗しました。${NC}"
+        echo "Homebrew が正しくインストールされているか確認してください。"
+        echo ""
+    fi
+fi
+
+ask_continue
+
+# ============================================================
+# ステップ 9: textgrid / saxonche
+# ============================================================
+write_header "ステップ 9 / 10  :  textgrid / saxonche のインストール"
+
+# 使用する Python コマンドを決定
+PY_CMD=""
+if python3.12 --version &>/dev/null; then
+    PY_CMD="python3.12"
+elif python3 --version &>/dev/null; then
+    PY_CMD="python3"
+fi
+
+if [ -z "$PY_CMD" ]; then
+    echo -e "${RED}[エラー] Python が見つかりません。ステップ 2 を確認してください。${NC}"
+    echo ""
+else
+    echo "使用する Python: $PY_CMD ($($PY_CMD --version))"
+    echo ""
+
+    echo "[1/2] textgrid をインストールしています..."
+    if $PY_CMD -m pip install textgrid; then
+        echo "[完了] textgrid のインストールが完了しました。"
+    else
+        echo -e "${RED}[エラー] textgrid のインストールに失敗しました。${NC}"
+    fi
+
+    echo ""
+
+    echo "[2/2] saxonche をインストールしています..."
+    if $PY_CMD -m pip install saxonche; then
+        echo "[完了] saxonche のインストールが完了しました。"
+    else
+        echo -e "${RED}[エラー] saxonche のインストールに失敗しました。${NC}"
+        echo "インターネット接続と Python のバージョンを確認してください。"
+    fi
+fi
+
+ask_continue
+
+# ============================================================
+# ステップ 10: 日本語 MFA モデルのダウンロード
+# ============================================================
+write_header "ステップ 10 / 10  :  日本語 MFA モデルのダウンロード"
+
+CONDA_CMD=$(resolve_conda)
+
+if [ -z "$CONDA_CMD" ]; then
+    echo -e "${RED}[エラー] conda が見つかりません。ステップ 3・4 を確認してください。${NC}"
+else
+    echo "日本語 MFA モデル（辞書・音響モデル）をダウンロードします。"
+    echo "（ファイルサイズが大きいため、数分かかる場合があります）"
+    echo ""
+
+    echo "[1/2] 日本語辞書モデルをダウンロードしています..."
+    if "$CONDA_CMD" run -n mfa mfa model download dictionary japanese_mfa; then
+        echo "[完了] 日本語辞書モデルのダウンロードが完了しました。"
+    else
+        echo -e "${RED}[エラー] 日本語辞書モデルのダウンロードに失敗しました。${NC}"
+        echo "インターネット接続と MFA 環境を確認してください。"
+    fi
+
+    echo ""
+
+    echo "[2/2] 日本語音響モデルをダウンロードしています..."
+    if "$CONDA_CMD" run -n mfa mfa model download acoustic japanese_mfa; then
+        echo "[完了] 日本語音響モデルのダウンロードが完了しました。"
+    else
+        echo -e "${RED}[エラー] 日本語音響モデルのダウンロードに失敗しました。${NC}"
+        echo "インターネット接続と MFA 環境を確認してください。"
+    fi
+fi
+
+ask_continue
+
+# ============================================================
+# 完了画面
+# ============================================================
+clear
+echo ""
+echo -e "${GREEN}===========================================================${NC}"
+echo -e "${GREEN}   セットアップが完了しました！${NC}"
+echo -e "${GREEN}===========================================================${NC}"
+echo ""
+echo "すべてのインストール手順が完了しました。"
+echo ""
+echo "【次のステップ】"
+echo "  1. ターミナルを再起動する（PATH の変更を反映するため）"
+echo "  2. VOICEVOX を起動する（日本語使用時）"
+echo "  3. KERT フォルダに移動する"
+echo "  4. python3.12 main.py を実行する"
+echo ""
+echo "ご不明な点は README.md または README_ja.md をご参照ください。"
+echo ""
+read -rp "Enterキーを押して終了"

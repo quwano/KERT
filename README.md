@@ -24,6 +24,14 @@ Input file (.txt / .md / .xml)
 EPUB3 file (with audio synchronization)
 ```
 
+## Quick Installation
+
+Installer scripts for macOS and Windows are available in the `easy_installer/` folder.
+
+See **[`easy_installer/INSTALL_GUIDE.md`](./easy_installer/INSTALL_GUIDE.md)** to find the right installer for your OS and language.
+
+For manual installation, follow the steps in [Requirements](#requirements) below.
+
 ## Requirements
 
 ### Python
