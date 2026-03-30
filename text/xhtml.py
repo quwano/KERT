@@ -5,6 +5,54 @@ XMLからXSLT変換で生成されたXHTMLコンテンツの処理、
 位置マッピング等の機能を提供します。
 """
 import re
+from pathlib import Path
+from saxonche import PySaxonProcessor
+
+# XSLTファイルのパス
+_PROJECT_ROOT = Path(__file__).parent.parent
+_XSLT_READING = _PROJECT_ROOT / "resources" / "xhtml_to_reading_text.xsl"
+
+# モジュールレベルキャッシュ
+_proc: PySaxonProcessor | None = None
+_reading_exec = None
+
+
+def _get_reading_exec():
+    """キャッシュ済み (PySaxonProcessor, XsltExecutable) を返す。"""
+    global _proc, _reading_exec
+    if _reading_exec is None:
+        _proc = PySaxonProcessor(license=False)
+        xslt_proc = _proc.new_xslt30_processor()
+        _reading_exec = xslt_proc.compile_stylesheet(
+            stylesheet_file=str(_XSLT_READING)
+        )
+    return _proc, _reading_exec
+
+
+def _xhtml_fragment_to_reading_text(xhtml: str) -> str:
+    """XHTMLフラグメントから読みテキストを抽出する（XSLT使用、内部共通処理）。
+
+    math要素をdata-yomi付きspanに前変換してからXSLTで処理する。
+    """
+    from mathconv.converter import get_current_processor, mathml_to_speech_xml
+    math_proc = get_current_processor()
+    sre_lang = math_proc.sre_lang if math_proc else "ja"
+
+    def _replace_math(m: re.Match) -> str:
+        speech = mathml_to_speech_xml(m.group(0), sre_lang)
+        speech_escaped = (speech
+                          .replace('&', '&amp;')
+                          .replace('<', '&lt;')
+                          .replace('>', '&gt;')
+                          .replace('"', '&quot;'))
+        return f'<span data-yomi="{speech_escaped}">数式</span>'
+
+    fragment = re.sub(r'<math\b[^>]*>.*?</math>', _replace_math, xhtml, flags=re.DOTALL)
+    proc, exec_ = _get_reading_exec()
+    xdm_node = proc.parse_xml(xml_text=f'<fragment>{fragment}</fragment>')
+    result = exec_.transform_to_string(xdm_node=xdm_node)
+    return result if result is not None else ""
+
 
 # インライン要素のパターン（ruby, u, strong, sub, sup, em）
 INLINE_ELEMENT_PATTERN = re.compile(
@@ -37,31 +85,7 @@ def normalize_xhtml_text(xhtml: str) -> str:
     - ruby要素: rt（ルビ）部分のみ抽出、rb（親字）は除去
     - その他のタグ: 除去してテキスト内容のみ残す
     """
-    result = xhtml
-
-    # math要素: SREで音声テキストに変換（TextGridマッチング用）
-    from mathconv.converter import get_current_processor, mathml_to_speech_xml
-    math_proc = get_current_processor()
-    sre_lang = math_proc.sre_lang if math_proc else "ja"
-
-    def _replace_math_with_speech(m: re.Match) -> str:
-        mathml = m.group(0)
-        return mathml_to_speech_xml(mathml, sre_lang)
-
-    result = re.sub(r'<math\b[^>]*>.*?</math>', _replace_math_with_speech, result, flags=re.DOTALL)
-
-    # ruby要素: <ruby><rb>親字</rb><rt>読み</rt></ruby> → 読み
-    result = re.sub(r'<ruby><rb>.*?</rb><rt>(.*?)</rt></ruby>', r'\1', result)
-
-    # data-yomi属性付きspan: 表示テキストをyomi値に置換
-    result = re.sub(
-        r'<span\b[^>]*\bdata-yomi="([^"]*)"[^>]*>.*?</span>',
-        r'\1',
-        result
-    )
-
-    # その他すべてのタグを除去
-    result = re.sub(r'<[^>]+>', '', result)
+    result = _xhtml_fragment_to_reading_text(xhtml)
 
     # 括弧の正規化
     result = (result
@@ -80,17 +104,7 @@ def normalize_xhtml_text(xhtml: str) -> str:
 
 def _get_inner_text_length(xhtml: str) -> int:
     """XHTML要素の内部テキスト長（タグ除去後）を取得する。"""
-    # ruby要素: rt部分の長さ
-    text = re.sub(r'<ruby><rb>.*?</rb><rt>(.*?)</rt></ruby>', r'\1', xhtml)
-    # data-yomi属性付きspan: yomi値の長さで計算
-    text = re.sub(
-        r'<span\b[^>]*\bdata-yomi="([^"]*)"[^>]*>.*?</span>',
-        r'\1',
-        text
-    )
-    # その他のタグを除去
-    text = re.sub(r'<[^>]+>', '', text)
-    return len(text)
+    return len(_xhtml_fragment_to_reading_text(xhtml))
 
 
 def xhtml_reading_pos_to_original(xhtml: str, reading_pos: int) -> int:
@@ -276,3 +290,12 @@ def get_xhtml_original_range(xhtml: str, reading_start: int, reading_len: int) -
     orig_start, orig_end = _balance_xhtml_tags(xhtml, orig_start, orig_end)
 
     return orig_start, orig_end
+
+
+def extract_xhtml_reading_text(xhtml: str) -> str:
+    """XHTMLフラグメントから読みテキストを抽出する（正規化前）。
+
+    normalize_xhtml_text()と異なり、括弧・全角数字の正規化は行わない。
+    TextGridマッチング用のスパン読みテキスト抽出に使用する。
+    """
+    return _xhtml_fragment_to_reading_text(xhtml)
