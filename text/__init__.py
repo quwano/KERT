@@ -24,6 +24,7 @@ from text.xhtml import (
     normalize_xhtml_text,
     xhtml_reading_pos_to_original,
     get_xhtml_original_range,
+    extract_xhtml_reading_text,
 )
 
 __all__ = [
@@ -46,4 +47,5 @@ __all__ = [
     "normalize_xhtml_text",
     "xhtml_reading_pos_to_original",
     "get_xhtml_original_range",
+    "extract_xhtml_reading_text",
 ]

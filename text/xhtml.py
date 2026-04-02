@@ -5,12 +5,58 @@ XMLからXSLT変換で生成されたXHTMLコンテンツの処理、
 位置マッピング等の機能を提供します。
 """
 import re
+import html
+import xml.sax.saxutils as _saxutils
+import xml.etree.ElementTree as ET
+import bisect
+from functools import lru_cache
+from pathlib import Path
+from saxonche import PySaxonProcessor
 
-# インライン要素のパターン（ruby, u, strong, sub, sup, em）
-INLINE_ELEMENT_PATTERN = re.compile(
-    r'<(ruby|u|strong|sub|sup|em)\b[^>]*>.*?</\1>',
-    re.DOTALL
-)
+# XSLTファイルのパス
+_PROJECT_ROOT = Path(__file__).parent.parent
+_XSLT_READING = _PROJECT_ROOT / "resources" / "xhtml_to_reading_text.xsl"
+
+# モジュールレベルキャッシュ
+_proc: PySaxonProcessor | None = None
+_reading_exec = None
+
+
+def _get_reading_exec():
+    """キャッシュ済み (PySaxonProcessor, XsltExecutable) を返す。"""
+    global _proc, _reading_exec
+    if _reading_exec is None:
+        _proc = PySaxonProcessor(license=False)
+        xslt_proc = _proc.new_xslt30_processor()
+        _reading_exec = xslt_proc.compile_stylesheet(
+            stylesheet_file=str(_XSLT_READING)
+        )
+    return _proc, _reading_exec
+
+
+def _xhtml_fragment_to_reading_text(xhtml: str) -> str:
+    """XHTMLフラグメントから読みテキストを抽出する（XSLT使用、内部共通処理）。
+
+    math要素をdata-yomi付きspanに前変換してからXSLTで処理する。
+    """
+    from mathconv.converter import get_current_processor, mathml_to_speech_xml
+    math_proc = get_current_processor()
+    sre_lang = math_proc.sre_lang if math_proc else "ja"
+
+    def _replace_math(m: re.Match) -> str:
+        speech = mathml_to_speech_xml(m.group(0), sre_lang)
+        speech_escaped = (speech
+                          .replace('&', '&amp;')
+                          .replace('<', '&lt;')
+                          .replace('>', '&gt;')
+                          .replace('"', '&quot;'))
+        return f'<span data-yomi="{speech_escaped}">数式</span>'
+
+    fragment = re.sub(r'<math\b[^>]*>.*?</math>', _replace_math, xhtml, flags=re.DOTALL)
+    proc, exec_ = _get_reading_exec()
+    xdm_node = proc.parse_xml(xml_text=f'<fragment>{fragment}</fragment>')
+    result = exec_.transform_to_string(xdm_node=xdm_node)
+    return result if result is not None else ""
 
 
 def normalize_xhtml_text(xhtml: str) -> str:
@@ -37,31 +83,7 @@ def normalize_xhtml_text(xhtml: str) -> str:
     - ruby要素: rt（ルビ）部分のみ抽出、rb（親字）は除去
     - その他のタグ: 除去してテキスト内容のみ残す
     """
-    result = xhtml
-
-    # math要素: SREで音声テキストに変換（TextGridマッチング用）
-    from mathconv.converter import get_current_processor, mathml_to_speech_xml
-    math_proc = get_current_processor()
-    sre_lang = math_proc.sre_lang if math_proc else "ja"
-
-    def _replace_math_with_speech(m: re.Match) -> str:
-        mathml = m.group(0)
-        return mathml_to_speech_xml(mathml, sre_lang)
-
-    result = re.sub(r'<math\b[^>]*>.*?</math>', _replace_math_with_speech, result, flags=re.DOTALL)
-
-    # ruby要素: <ruby><rb>親字</rb><rt>読み</rt></ruby> → 読み
-    result = re.sub(r'<ruby><rb>.*?</rb><rt>(.*?)</rt></ruby>', r'\1', result)
-
-    # data-yomi属性付きspan: 表示テキストをyomi値に置換
-    result = re.sub(
-        r'<span\b[^>]*\bdata-yomi="([^"]*)"[^>]*>.*?</span>',
-        r'\1',
-        result
-    )
-
-    # その他すべてのタグを除去
-    result = re.sub(r'<[^>]+>', '', result)
+    result = _xhtml_fragment_to_reading_text(xhtml)
 
     # 括弧の正規化
     result = (result
@@ -78,19 +100,156 @@ def normalize_xhtml_text(xhtml: str) -> str:
     return result
 
 
-def _get_inner_text_length(xhtml: str) -> int:
-    """XHTML要素の内部テキスト長（タグ除去後）を取得する。"""
-    # ruby要素: rt部分の長さ
-    text = re.sub(r'<ruby><rb>.*?</rb><rt>(.*?)</rt></ruby>', r'\1', xhtml)
-    # data-yomi属性付きspan: yomi値の長さで計算
-    text = re.sub(
-        r'<span\b[^>]*\bdata-yomi="([^"]*)"[^>]*>.*?</span>',
-        r'\1',
-        text
-    )
-    # その他のタグを除去
-    text = re.sub(r'<[^>]+>', '', text)
-    return len(text)
+# ──────────────────────────────────────────────────────────────────────────────
+# セグメントマップ（ElementTree ベース）
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _text_orig_len(t: str) -> int:
+    """テキストノードの元のXML文字列での長さ（&amp; 等のエスケープを考慮）"""
+    return len(_saxutils.escape(t))
+
+
+def _attr_orig_len(v: str) -> int:
+    """属性値の元のXML文字列での長さ"""
+    return len(html.escape(v, quote=True))
+
+
+def _open_tag_orig_len(tag: str, attribs: dict) -> int:
+    """<tag k="v"...> の文字列長"""
+    n = 1 + len(tag)  # '<' + tagname
+    for k, v in attribs.items():
+        n += 1 + len(k) + 2 + _attr_orig_len(v) + 1  # ' key="value"'
+    return n + 1  # '>'
+
+
+def _self_close_orig_len(tag: str, attribs: dict) -> int:
+    """<tag k="v".../> の文字列長"""
+    return _open_tag_orig_len(tag, attribs) + 1  # '>' → '/>'
+
+
+def _close_tag_orig_len(tag: str) -> int:
+    """</tag> の文字列長"""
+    return 3 + len(tag)
+
+
+@lru_cache(maxsize=32)
+def _build_segments(
+    xhtml: str, sre_lang: str
+) -> tuple[tuple[int, int, int, int], ...]:
+    """
+    XHTML文字列を解析し、セグメントマップを返す（キャッシュ済み）。
+
+    各セグメント: (r_start, r_end, o_start, o_end)
+      r_*: 読みテキスト（タグ除去後）での文字位置
+      o_*: 元のXHTML文字列での文字位置
+
+    インライン要素の開き・閉じタグは (r, r, o_tag_start, o_tag_end) として記録。
+    同一の (xhtml, sre_lang) に対して複数回呼ばれる場合にキャッシュが効く。
+    """
+    from mathconv.converter import mathml_to_speech_xml
+
+    # math → data-yomi span に置換（元のmath文字列長を記録）
+    math_orig_lens: list[int] = []
+
+    def _replace_math(m: re.Match) -> str:
+        speech = mathml_to_speech_xml(m.group(0), sre_lang)
+        speech_esc = html.escape(speech, quote=True)
+        idx = len(math_orig_lens)
+        math_orig_lens.append(len(m.group(0)))
+        return f'<span data-yomi="{speech_esc}" data-math-idx="{idx}">数式</span>'
+
+    fragment = re.sub(r'<math\b[^>]*>.*?</math>', _replace_math, xhtml, flags=re.DOTALL)
+
+    try:
+        root = ET.fromstring(f'<fragment>{fragment}</fragment>')
+    except ET.ParseError:
+        return ()
+
+    segs: list[tuple[int, int, int, int]] = []
+
+    def walk(elem: ET.Element, r: int, o: int) -> tuple[int, int]:
+        # elem.text（最初の子の前のテキスト）
+        if elem.text:
+            tlen = len(elem.text)
+            olen = _text_orig_len(elem.text)
+            segs.append((r, r + tlen, o, o + olen))
+            r += tlen
+            o += olen
+
+        for child in elem:
+            tag = child.tag
+            attrs = child.attrib
+
+            if tag == 'ruby':
+                rb = child.find('rb')
+                rt = child.find('rt')
+                rb_t = (rb.text or '') if rb is not None else ''
+                rt_t = (rt.text or '') if rt is not None else ''
+                o_ruby = (
+                    _open_tag_orig_len('ruby', {})
+                    + _open_tag_orig_len('rb', {}) + _text_orig_len(rb_t) + _close_tag_orig_len('rb')
+                    + _open_tag_orig_len('rt', {}) + _text_orig_len(rt_t) + _close_tag_orig_len('rt')
+                    + _close_tag_orig_len('ruby')
+                )
+                segs.append((r, r + len(rt_t), o, o + o_ruby))
+                r += len(rt_t)
+                o += o_ruby
+
+            elif tag == 'span' and 'data-yomi' in attrs:
+                yomi = attrs['data-yomi']
+                math_idx = attrs.get('data-math-idx')
+                if math_idx is not None:
+                    o_span = math_orig_lens[int(math_idx)]
+                else:
+                    inner = child.text or ''
+                    o_span = (
+                        _open_tag_orig_len('span', attrs)
+                        + _text_orig_len(inner)
+                        + _close_tag_orig_len('span')
+                    )
+                segs.append((r, r + len(yomi), o, o + o_span))
+                r += len(yomi)
+                o += o_span
+
+            elif tag == 'img':
+                alt = attrs.get('alt', '')
+                o_img = _self_close_orig_len('img', attrs)
+                segs.append((r, r + len(alt), o, o + o_img))
+                r += len(alt)
+                o += o_img
+
+            elif tag in ('u', 'strong', 'sub', 'sup', 'em', 'span'):
+                # 透過インライン要素: 開き・閉じタグを幅ゼロセグメントとして記録
+                o_open = _open_tag_orig_len(tag, attrs)
+                segs.append((r, r, o, o + o_open))
+                o += o_open
+                r, o = walk(child, r, o)
+                o_close = _close_tag_orig_len(tag)
+                segs.append((r, r, o, o + o_close))
+                o += o_close
+
+            else:
+                # 未知要素: orig位置を消費（reading は増やさない）
+                o_open = _open_tag_orig_len(tag, attrs)
+                segs.append((r, r, o, o + o_open))
+                o += o_open
+                r, o = walk(child, r, o)
+                o_close = _close_tag_orig_len(tag)
+                segs.append((r, r, o, o + o_close))
+                o += o_close
+
+            # child.tail（この子の後、次の兄弟の前のテキスト）
+            if child.tail:
+                tlen = len(child.tail)
+                olen = _text_orig_len(child.tail)
+                segs.append((r, r + tlen, o, o + olen))
+                r += tlen
+                o += olen
+
+        return r, o
+
+    walk(root, 0, 0)
+    return tuple(segs)
 
 
 def xhtml_reading_pos_to_original(xhtml: str, reading_pos: int) -> int:
@@ -109,89 +268,27 @@ def xhtml_reading_pos_to_original(xhtml: str, reading_pos: int) -> int:
     int
         元のXHTMLテキストでの対応位置。
     """
-    original_pos = 0
-    current_reading_pos = 0
+    from mathconv.converter import get_current_processor
+    math_proc = get_current_processor()
+    sre_lang = math_proc.sre_lang if math_proc else "ja"
 
-    # 数式プロセッサを一度だけ取得
-    from mathconv.converter import get_current_processor, mathml_to_speech_xml
-    _math_proc = get_current_processor()
-    _sre_lang = _math_proc.sre_lang if _math_proc else "ja"
+    segs = _build_segments(xhtml, sre_lang)
+    if not segs:
+        return reading_pos
 
-    while current_reading_pos < reading_pos and original_pos < len(xhtml):
-        remaining = xhtml[original_pos:]
+    r_starts = tuple(s[0] for s in segs)
+    idx = bisect.bisect_right(r_starts, reading_pos) - 1
 
-        # math要素のチェック: <math ...>...</math>（原子的に扱う）
-        math_match = re.match(r'<math\b[^>]*>.*?</math>', remaining, re.DOTALL)
-        if math_match:
-            mathml = math_match.group(0)
-            speech = mathml_to_speech_xml(mathml, _sre_lang)
-            reading_len = len(speech)
-            if current_reading_pos + reading_len <= reading_pos:
-                current_reading_pos += reading_len
-                original_pos += len(math_match.group(0))
-                continue
-            else:
-                # math要素内でreading_posに達した場合、要素全体を含める
-                break
+    if idx < 0:
+        return 0
 
-        # ruby要素のチェック: <ruby><rb>...</rb><rt>...</rt></ruby>
-        ruby_match = re.match(r'<ruby><rb>(.*?)</rb><rt>(.*?)</rt></ruby>', remaining)
-        if ruby_match:
-            reading_len = len(ruby_match.group(2))  # rt部分（読み）の長さ
-            if current_reading_pos + reading_len <= reading_pos:
-                current_reading_pos += reading_len
-                original_pos += len(ruby_match.group(0))
-                continue
-            else:
-                # ruby内でreading_posに達した場合、ruby全体を含める
-                break
+    r_start, r_end, o_start, o_end = segs[idx]
 
-        # data-yomi属性付きspanのチェック
-        yomi_match = re.match(
-            r'<span\b[^>]*\bdata-yomi="([^"]*)"[^>]*>.*?</span>',
-            remaining
-        )
-        if yomi_match:
-            yomi_text = yomi_match.group(1)
-            reading_len = len(yomi_text)
-            if current_reading_pos + reading_len <= reading_pos:
-                current_reading_pos += reading_len
-                original_pos += len(yomi_match.group(0))
-                continue
-            else:
-                # yomi内でreading_posに達した場合、span全体を含める
-                break
-
-        # インライン要素のチェック: <tag>...</tag>
-        inline_match = re.match(r'<(u|strong|sub|sup|em)\b[^>]*>(.*?)</\1>', remaining, re.DOTALL)
-        if inline_match:
-            inner_content = inline_match.group(2)
-            inner_reading_len = _get_inner_text_length(inner_content)
-            if current_reading_pos + inner_reading_len <= reading_pos:
-                current_reading_pos += inner_reading_len
-                original_pos += len(inline_match.group(0))
-                continue
-            else:
-                # 要素内でreading_posに達した場合、開始タグの後に進む
-                tag_len = len(f'<{inline_match.group(1)}>')
-                original_pos += tag_len
-                # 内部コンテンツを再帰的に処理
-                inner_offset = reading_pos - current_reading_pos
-                inner_pos = xhtml_reading_pos_to_original(inner_content, inner_offset)
-                return original_pos + inner_pos
-
-        # 開始タグのチェック: <tag> または <tag attr="...">
-        tag_match = re.match(r'<[^>]+>', remaining)
-        if tag_match:
-            # タグ自体はスキップ（読みテキストには含まれない）
-            original_pos += len(tag_match.group(0))
-            continue
-
-        # 通常の文字
-        current_reading_pos += 1
-        original_pos += 1
-
-    return original_pos
+    if reading_pos >= r_end:
+        # このセグメントを超えている（= 次のセグメントの o_start に相当）
+        return o_end
+    # テキストセグメント内: 文字補間。アトミックセグメント(r_start==r_end)は o_start を返す。
+    return o_start + (reading_pos - r_start)
 
 
 def _balance_xhtml_tags(xhtml: str, start: int, end: int) -> tuple[int, int]:
@@ -215,35 +312,25 @@ def _balance_xhtml_tags(xhtml: str, start: int, end: int) -> tuple[int, int]:
     tuple[int, int]
         平衡化された (開始位置, 終了位置)。
     """
-    extracted = xhtml[start:end]
+    try:
+        ET.fromstring(f'<fragment>{xhtml[start:end]}</fragment>')
+        return start, end
+    except ET.ParseError:
+        pass
 
-    # タグを出現順に取得
-    tag_pattern = re.compile(r'<(/?)(ruby|u|strong|sub|sup|em)\b[^>]*>')
-    tag_stack = []
+    from mathconv.converter import get_current_processor
+    math_proc = get_current_processor()
+    sre_lang = math_proc.sre_lang if math_proc else "ja"
 
-    for match in tag_pattern.finditer(extracted):
-        is_close = match.group(1) == '/'
-        tag_name = match.group(2)
+    segs = _build_segments(xhtml, sre_lang)
+    if not segs:
+        return start, end
 
-        if is_close:
-            # 閉じタグ: スタックから対応する開きタグをpop
-            if tag_stack and tag_stack[-1] == tag_name:
-                tag_stack.pop()
-        else:
-            # 開きタグ: スタックにpush
-            tag_stack.append(tag_name)
-
-    # 未閉じタグがあれば、閉じタグを探して範囲を拡張
+    # [start, end) の範囲に o_start があるが o_end が end を超えるセグメントを探す
     new_end = end
-    search_start = end
-
-    for tag in reversed(tag_stack):
-        close_tag = f'</{tag}>'
-        remaining = xhtml[search_start:]
-        close_pos = remaining.find(close_tag)
-        if close_pos != -1:
-            new_end = search_start + close_pos + len(close_tag)
-            search_start = new_end
+    for _, _, o_s, o_e in segs:
+        if o_s < end and o_e > new_end:
+            new_end = o_e
 
     return start, new_end
 
@@ -276,3 +363,12 @@ def get_xhtml_original_range(xhtml: str, reading_start: int, reading_len: int) -
     orig_start, orig_end = _balance_xhtml_tags(xhtml, orig_start, orig_end)
 
     return orig_start, orig_end
+
+
+def extract_xhtml_reading_text(xhtml: str) -> str:
+    """XHTMLフラグメントから読みテキストを抽出する（正規化前）。
+
+    normalize_xhtml_text()と異なり、括弧・全角数字の正規化は行わない。
+    TextGridマッチング用のスパン読みテキスト抽出に使用する。
+    """
+    return _xhtml_fragment_to_reading_text(xhtml)

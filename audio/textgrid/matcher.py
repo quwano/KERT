@@ -19,6 +19,7 @@ from text.xhtml import (
     normalize_xhtml_text,
     xhtml_reading_pos_to_original,
     get_xhtml_original_range,
+    extract_xhtml_reading_text,
 )
 from text.common import (
     RUBY_PATTERN,
@@ -1423,17 +1424,7 @@ def _extract_span_reading(span_content: str) -> str:
     img要素の場合はalt属性値を、
     それ以外はテキスト内容を返す。
     """
-    import re
-    # ruby要素: <ruby><rb>親字</rb><rt>読み</rt></ruby> → 読み
-    result = re.sub(r'<ruby><rb>.*?</rb><rt>(.*?)</rt></ruby>', r'\1', span_content)
-    # yomikae要素（seg内）: <span data-yomi="読み">表示</span> → 読み
-    result = re.sub(r'<span data-yomi="([^"]*)">.*?</span>', r'\1', result)
-    # img要素: alt属性値を抽出して置換（タグ除去前に処理）
-    result = re.sub(r'<img\b[^>]*\balt="([^"]*)"[^>]*/>', r'\1', result)
-    result = re.sub(r'<img\b[^>]*/>', '', result)  # alt属性なし
-    # その他すべてのタグを除去
-    result = re.sub(r'<[^>]+>', '', result)
-    return result.lower()
+    return extract_xhtml_reading_text(span_content).lower()
 
 
 @dataclass
