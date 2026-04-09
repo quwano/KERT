@@ -268,6 +268,22 @@ Section 1 content.
 - Images are copied to the `images/` directory within the EPUB.
 - Supported formats: SVG, PNG, JPEG, GIF, WebP
 
+#### Tables
+
+Use GFM (GitHub Flavored Markdown) pipe table notation to create tables.
+
+```markdown
+| Column 1 | Column 2 | Column 3 |
+| --- | --- | --- |
+| Data A | Data B | Data C |
+| Data D | Data E | Data F |
+```
+
+- The first row becomes the header row (`<th>`); rows from the third onward become data rows (`<td>`).
+- The second row (`---`) is the separator row that defines the number of columns.
+- **Highlighted cell by cell.** Header cells (`<th>`) are also read aloud.
+- Formatting notations (ruby, alternative reading, bold, etc.) can be used within cells.
+
 ### XML Format
 
 Write XML files conforming to the XML schema (`resources/document_schema.xsd`).
@@ -298,6 +314,10 @@ The root element is `<root>`, with heading elements (`title1` to `title5`) and p
 | `<sub>` | Subscript | `<sub>2</sub>`                               |
 | `<sup>` | Superscript | `<sup>3</sup>`                               |
 | `<math>` | MathML formula | `<math xmlns="...">...</math>`               |
+| `<table>` | Table | `<table>...</table>`                         |
+| `<tr>` | Row | `<tr>...</tr>`                               |
+| `<th>` | Header cell | `<th>Column name</th>`                       |
+| `<td>` | Data cell | `<td>Value</td>`                             |
 
 - Decoration elements can be nested. Example: `<u><g>bold underline</g></u>`
 
@@ -310,6 +330,22 @@ The root element is `<root>`, with heading elements (`title1` to `title5`) and p
 - Place image files in the same directory as the input file, or specify a relative path.
 - Images are copied to the `images/` directory within the EPUB.
 - Supported formats: SVG, PNG, JPEG, GIF, WebP
+
+#### Tables
+
+Use the `<table>` element to create tables.
+
+```xml
+<table>
+  <tr><th>Column 1</th><th>Column 2</th></tr>
+  <tr><td>Data A</td><td>Data B</td></tr>
+  <tr><td>Data D</td><td>Data E</td></tr>
+</table>
+```
+
+- `<tr>` is a row, `<th>` is a header cell, and `<td>` is a data cell.
+- **Highlighted cell by cell.** `<th>` cells are also read aloud.
+- Decoration elements (`<ruby>`, `<u>`, etc.) can be used within cells.
 
 #### Heading Hierarchy (title1 to title5)
 

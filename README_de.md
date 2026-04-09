@@ -268,6 +268,22 @@ Inhalt von Abschnitt 1.
 - Bilder werden in das Verzeichnis `images/` innerhalb des EPUBs kopiert.
 - Unterstützte Formate: SVG, PNG, JPEG, GIF, WebP
 
+#### Tabellen
+
+Verwenden Sie die GFM-Pipe-Tabellen-Notation (GitHub Flavored Markdown) zur Erstellung von Tabellen.
+
+```markdown
+| Spalte 1 | Spalte 2 | Spalte 3 |
+| --- | --- | --- |
+| Daten A | Daten B | Daten C |
+| Daten D | Daten E | Daten F |
+```
+
+- Die erste Zeile wird zur Kopfzeile (`<th>`); ab der dritten Zeile folgen Datenzeilen (`<td>`).
+- Die zweite Zeile (`---`) ist die Trennzeile, die die Spaltenanzahl definiert.
+- **Zellenweises Hervorheben.** Kopfzellen (`<th>`) werden ebenfalls vorgelesen.
+- Formatierungsnotationen (Ruby, alternative Lesung, Fett usw.) können in Zellen verwendet werden.
+
 ### XML-Format
 
 Schreiben Sie XML-Dateien, die dem XML-Schema (`resources/document_schema.xsd`) entsprechen.
@@ -298,6 +314,10 @@ Das Wurzelelement ist `<root>`, mit Überschriftenelementen (`title1` bis `title
 | `<sub>` | Tiefgestellt | `<sub>2</sub>` |
 | `<sup>` | Hochgestellt | `<sup>3</sup>` |
 | `<math>` | MathML-Formel | `<math xmlns="...">...</math>` |
+| `<table>` | Tabelle | `<table>...</table>` |
+| `<tr>` | Zeile | `<tr>...</tr>` |
+| `<th>` | Kopfzelle | `<th>Spaltenname</th>` |
+| `<td>` | Datenzelle | `<td>Wert</td>` |
 
 - Dekorationselemente können verschachtelt werden. Beispiel: `<u><g>fett unterstrichen</g></u>`
 
@@ -310,6 +330,22 @@ Das Wurzelelement ist `<root>`, mit Überschriftenelementen (`title1` bis `title
 - Platzieren Sie Bilddateien im selben Verzeichnis wie die Eingabedatei oder geben Sie einen relativen Pfad an.
 - Bilder werden in das Verzeichnis `images/` innerhalb des EPUBs kopiert.
 - Unterstützte Formate: SVG, PNG, JPEG, GIF, WebP
+
+#### Tabellen
+
+Verwenden Sie das Element `<table>` zur Erstellung von Tabellen.
+
+```xml
+<table>
+  <tr><th>Spalte 1</th><th>Spalte 2</th></tr>
+  <tr><td>Daten A</td><td>Daten B</td></tr>
+  <tr><td>Daten D</td><td>Daten E</td></tr>
+</table>
+```
+
+- `<tr>` ist eine Zeile, `<th>` eine Kopfzelle und `<td>` eine Datenzelle.
+- **Zellenweises Hervorheben.** `<th>`-Zellen werden ebenfalls vorgelesen.
+- Dekorationselemente (`<ruby>`, `<u>` usw.) können in Zellen verwendet werden.
 
 #### Überschriftenhierarchie (title1 bis title5)
 
