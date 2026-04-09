@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 from core import logger
 from core.messages import msg
-from parsers.commonmark import Section
+from parsers.commonmark import Section, TableData
 from epub.packaging import (
     create_epub_structure,
     write_css_file,
@@ -37,6 +37,72 @@ from audio.textgrid.utils import extract_textgrid_intervals
 
 if TYPE_CHECKING:
     from core.metadata_reader import BookMetadata
+
+
+def _unwrap_p(xhtml_para: str) -> str:
+    """<p>...</p>ラッパーを除去して内部コンテンツを返す。"""
+    s = xhtml_para.strip()
+    if s.startswith('<p>') and s.endswith('</p>'):
+        return s[3:-4]
+    return s
+
+
+def _process_table(
+    table: TableData,
+    tg_intervals: list[tuple[str, float, float]],
+    tg_index: int,
+    span_id: int,
+    element_prefix: str,
+    xhtml_path: str,
+    audio_path: str,
+    highlight_mode: str = "punctuation",
+) -> tuple[str, list[str], int, int]:
+    """TableDataをXHTML table要素とSMIL par要素に変換する。
+
+    各セルを個別にprocess_paragraph()で処理し、セル単位のハイライトを実現する。
+
+    Returns
+    -------
+    tuple[str, list[str], int, int]
+        - xhtml_table : str  生成されたXHTML table要素
+        - smil_pars : list[str]  生成されたSMIL par要素のリスト
+        - next_span_id : int
+        - next_tg_index : int
+    """
+    smil_pars: list[str] = []
+    thead_cells: list[str] = []
+    tbody_rows: list[str] = []
+
+    # ヘッダー行の処理
+    for cell in table.header_row.cells:
+        cell_p, cell_smil, span_id, tg_index = process_paragraph(
+            cell.content, tg_intervals, tg_index, span_id,
+            element_prefix, xhtml_path, audio_path,
+            highlight_mode=highlight_mode, is_xml=False
+        )
+        smil_pars.extend(cell_smil)
+        thead_cells.append(f'<th>{_unwrap_p(cell_p)}</th>' if cell_p else '<th></th>')
+
+    # ボディ行の処理
+    for row in table.body_rows:
+        row_cells: list[str] = []
+        for cell in row.cells:
+            cell_p, cell_smil, span_id, tg_index = process_paragraph(
+                cell.content, tg_intervals, tg_index, span_id,
+                element_prefix, xhtml_path, audio_path,
+                highlight_mode=highlight_mode, is_xml=False
+            )
+            smil_pars.extend(cell_smil)
+            row_cells.append(f'<td>{_unwrap_p(cell_p)}</td>' if cell_p else '<td></td>')
+        tbody_rows.append(f'<tr>{"".join(row_cells)}</tr>')
+
+    xhtml_table = (
+        f'        <table>'
+        f'<thead><tr>{"".join(thead_cells)}</tr></thead>'
+        f'<tbody>{"".join(tbody_rows)}</tbody>'
+        f'</table>'
+    )
+    return xhtml_table, smil_pars, span_id, tg_index
 
 
 def build_section_xhtml_and_smil(
@@ -114,16 +180,25 @@ def build_section_xhtml_and_smil(
 
     # 本文段落の処理
     for paragraph in section.paragraphs:
-        para_p, para_smil, span_id, tg_index = process_paragraph(
-            paragraph, tg_intervals, tg_index, span_id,
-            element_prefix, xhtml_path, audio_path,
-            highlight_mode=highlight_mode,
-            is_xml=False
-        )
-        smil_pars.extend(para_smil)
-
-        if para_p:
-            xhtml_paragraphs.append(para_p)
+        if isinstance(paragraph, TableData):
+            tbl_xhtml, tbl_smil, span_id, tg_index = _process_table(
+                paragraph, tg_intervals, tg_index, span_id,
+                element_prefix, xhtml_path, audio_path,
+                highlight_mode=highlight_mode
+            )
+            smil_pars.extend(tbl_smil)
+            if tbl_xhtml:
+                xhtml_paragraphs.append(tbl_xhtml)
+        else:
+            para_p, para_smil, span_id, tg_index = process_paragraph(
+                paragraph, tg_intervals, tg_index, span_id,
+                element_prefix, xhtml_path, audio_path,
+                highlight_mode=highlight_mode,
+                is_xml=False
+            )
+            smil_pars.extend(para_smil)
+            if para_p:
+                xhtml_paragraphs.append(para_p)
 
     # セクション終了時間を記録
     end_time = tg_intervals[tg_index - 1][2] if tg_index > 0 else 0.0
@@ -596,15 +671,25 @@ def build_commonmark_multi_epub(
 
             # 本文段落の処理
             for paragraph in section.paragraphs:
-                para_p, para_smil, span_id, tg_index = process_paragraph(
-                    paragraph, tg_intervals, tg_index, span_id,
-                    element_prefix, xhtml_path, audio_path_rel,
-                    highlight_mode=highlight_mode,
-                    is_xml=False
-                )
-                smil_pars.extend(para_smil)
-                if para_p:
-                    xhtml_paragraphs.append(para_p)
+                if isinstance(paragraph, TableData):
+                    tbl_xhtml, tbl_smil, span_id, tg_index = _process_table(
+                        paragraph, tg_intervals, tg_index, span_id,
+                        element_prefix, xhtml_path, audio_path_rel,
+                        highlight_mode=highlight_mode
+                    )
+                    smil_pars.extend(tbl_smil)
+                    if tbl_xhtml:
+                        xhtml_paragraphs.append(tbl_xhtml)
+                else:
+                    para_p, para_smil, span_id, tg_index = process_paragraph(
+                        paragraph, tg_intervals, tg_index, span_id,
+                        element_prefix, xhtml_path, audio_path_rel,
+                        highlight_mode=highlight_mode,
+                        is_xml=False
+                    )
+                    smil_pars.extend(para_smil)
+                    if para_p:
+                        xhtml_paragraphs.append(para_p)
 
             # セクション終了時間を記録
             end_time = tg_intervals[tg_index - 1][2] if tg_index > 0 else 0.0

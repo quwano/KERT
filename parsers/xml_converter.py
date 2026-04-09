@@ -250,8 +250,8 @@ def _extract_sections(xml_str: str) -> list[XmlSection]:
         heading_text_xhtml = _extract_content(content, "heading-text")
         title_text = _strip_xhtml_tags(heading_text_xhtml) if heading_text_xhtml else _strip_xhtml_tags(title_xhtml)
 
-        # <p>...</p> を抽出
-        paragraphs = _extract_paragraphs(content)
+        # <p>...</p> と <table>...</table> を出現順に抽出
+        paragraphs = _extract_body_elements(content)
 
         sections.append(XmlSection(
             level=level,
@@ -270,11 +270,22 @@ def _extract_content(xml_str: str, tag_name: str) -> str:
     return match.group(1).strip() if match else ""
 
 
-def _extract_paragraphs(xml_str: str) -> list[str]:
-    """XMLからすべてのp要素の内容をリストで抽出する。"""
-    pattern = r"<p>(.*?)</p>"
-    matches = re.findall(pattern, xml_str, re.DOTALL)
-    return [m.strip() for m in matches]
+def _extract_body_elements(xml_str: str) -> list[str]:
+    """XMLからp要素とtable要素を出現順に抽出する。
+
+    - p: <p>タグを除いた内容文字列を返す（process_xml_paragraphと互換）
+    - table: <table>...</table>タグごと返す（process_xml_paragraphでラップ不要と判定）
+
+    注意: ネストしたtable要素には非対応。
+    """
+    result = []
+    for m in re.finditer(r'<(p|table)>(.*?)</\1>', xml_str, re.DOTALL):
+        tag, content = m.group(1), m.group(2).strip()
+        if tag == 'p':
+            result.append(content)
+        else:
+            result.append(f'<table>{content}</table>')
+    return result
 
 
 def _strip_xhtml_tags(xhtml: str) -> str:

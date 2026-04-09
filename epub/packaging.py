@@ -29,6 +29,18 @@ h1 {
 h2, h3, h4, h5 {
     font-weight: normal;
 }
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+th, td {
+    border: 1px solid #888;
+    padding: 0.3em 0.6em;
+}
+th {
+    font-weight: normal;
+    background-color: #f0f0f0;
+}
 """
 
 CONTAINER_XML = ('<?xml version="1.0" encoding="UTF-8"?>'

@@ -164,12 +164,16 @@ class CommonMarkSourceAdapter(SourceAdapter):
             self._title = self._root_heading.title
             self._title_xhtml = self._root_heading.title_xhtml
 
-            # _paragraphs は全セクションの全段落（音声生成時に使用）
+            # _paragraphs は全セクションの全段落（画像抽出・表示用、文字列のみ）
+            # TableDataは get_sections() 経由でアクセスする
+            from parsers.commonmark import TableData as _TableData
             all_paragraphs: list[str] = []
             for section in self._sections:
                 # 見出しも段落として追加（読み上げ用）
                 all_paragraphs.append(section.heading.title)
-                all_paragraphs.extend(section.paragraphs)
+                for para in section.paragraphs:
+                    if isinstance(para, str):
+                        all_paragraphs.append(para)
             self._paragraphs = all_paragraphs
         else:
             # 見出しがない場合: 1行目をタイトルとして扱う
@@ -209,15 +213,19 @@ class CommonMarkSourceAdapter(SourceAdapter):
             return []
 
         # 見出しがある場合: 最初のセクションの見出しを除き、残りの段落をすべて返す
+        # TableDataは文字列でないため除外する
+        from parsers.commonmark import TableData as _TableData
         body_paragraphs: list[str] = []
         for i, section in enumerate(self._sections):
             if i == 0:
-                # 最初のセクションは本文のみ（見出しはタイトルとして別途使用）
-                body_paragraphs.extend(section.paragraphs)
+                for para in section.paragraphs:
+                    if isinstance(para, str):
+                        body_paragraphs.append(para)
             else:
-                # 2番目以降は見出しも含める
                 body_paragraphs.append(section.heading.title)
-                body_paragraphs.extend(section.paragraphs)
+                for para in section.paragraphs:
+                    if isinstance(para, str):
+                        body_paragraphs.append(para)
         return body_paragraphs
 
     def get_sections(self) -> list["Section"]:

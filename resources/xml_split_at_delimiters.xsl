@@ -105,6 +105,40 @@
         </xsl:for-each>
     </xsl:template>
 
+    <!-- td, th: p と同様にテキストを句読点で分割し <seg> でラップ（セル構造は保持） -->
+    <xsl:template match="td | th">
+        <xsl:copy>
+            <xsl:copy-of select="@*"/>
+            <!-- Step 1: テキストノードに seg-marker を挿入、要素子は再帰処理 -->
+            <xsl:variable name="marked_content">
+                <xsl:for-each select="child::node()">
+                    <xsl:choose>
+                        <xsl:when test="self::text()">
+                            <xsl:analyze-string select="." regex="{$delimiter-pattern}">
+                                <xsl:matching-substring>
+                                    <xsl:value-of select="."/>
+                                    <seg-marker/>
+                                </xsl:matching-substring>
+                                <xsl:non-matching-substring>
+                                    <xsl:value-of select="."/>
+                                </xsl:non-matching-substring>
+                            </xsl:analyze-string>
+                        </xsl:when>
+                        <xsl:otherwise>
+                            <xsl:apply-templates select="."/>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:for-each>
+            </xsl:variable>
+            <!-- Step 2: seg-marker 終了単位でグループ化し <seg> でラップ -->
+            <xsl:for-each-group select="$marked_content/node()" group-ending-with="seg-marker">
+                <seg>
+                    <xsl:copy-of select="current-group()[not(self::seg-marker)]"/>
+                </seg>
+            </xsl:for-each-group>
+        </xsl:copy>
+    </xsl:template>
+
     <!-- ruby, yomikae: 分割しない（identity） -->
     <xsl:template match="ruby | yomikae">
         <xsl:copy>

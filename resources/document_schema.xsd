@@ -9,9 +9,27 @@
         <xs:element ref="title4"/>
         <xs:element ref="title5"/>
         <xs:element ref="p"/>
+        <xs:element ref="table"/>
       </xs:choice>
     </xs:complexType>
   </xs:element>
+  <xs:element name="table">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="tr" maxOccurs="unbounded"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="tr">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded">
+        <xs:element ref="td"/>
+        <xs:element ref="th"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="td" type="rich_text"/>
+  <xs:element name="th" type="rich_text"/>
   <xs:element name="title1" type="rich_text"/>
   <xs:element name="title2" type="rich_text"/>
   <xs:element name="title3" type="rich_text"/>

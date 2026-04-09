@@ -51,11 +51,19 @@
                             <xsl:when test="self::p">
                                 <p><xsl:apply-templates mode="with-span"/></p>
                             </xsl:when>
+                            <xsl:when test="self::table">
+                                <table><xsl:apply-templates mode="with-span"/></table>
+                            </xsl:when>
                         </xsl:choose>
                     </xsl:for-each>
                 </section>
             </xsl:for-each-group>
         </result>
+    </xsl:template>
+
+    <!-- table/tr/td/th要素: with-spanモードで構造を保持して再帰処理 -->
+    <xsl:template match="table | tr | td | th" mode="with-span">
+        <xsl:copy><xsl:apply-templates mode="with-span"/></xsl:copy>
     </xsl:template>
 
     <!-- ruby要素: spanでラップしてXHTMLのruby/rb/rtに変換 -->
@@ -137,7 +145,7 @@
 
     <!-- 空白のみのテキストノード: インライン要素間の空白は保持 -->
     <xsl:template match="text()[not(normalize-space())]" mode="with-span">
-        <xsl:if test="parent::u or parent::g or parent::sub or parent::sup or parent::title1 or parent::title2 or parent::title3 or parent::title4 or parent::title5 or parent::p">
+        <xsl:if test="parent::u or parent::g or parent::sub or parent::sup or parent::title1 or parent::title2 or parent::title3 or parent::title4 or parent::title5 or parent::p or parent::td or parent::th">
             <xsl:if test="preceding-sibling::node() and following-sibling::node()">
                 <xsl:value-of select="' '"/>
             </xsl:if>
@@ -145,6 +153,12 @@
     </xsl:template>
 
     <!-- no-spanモード: spanを付けずに変換 -->
+
+    <!-- table/tr/td/th要素: no-spanモードで構造を保持して再帰処理 -->
+    <xsl:template match="table | tr | td | th" mode="no-span">
+        <xsl:copy><xsl:apply-templates mode="no-span"/></xsl:copy>
+    </xsl:template>
+
     <xsl:template match="ruby" mode="no-span">
         <ruby>
             <rb><xsl:apply-templates mode="no-span"/></rb>

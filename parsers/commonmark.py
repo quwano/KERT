@@ -14,6 +14,29 @@ from text.processing import escape_with_formatting
 # 見出しパターン: 行頭の#（1〜5個）+ 空白 + テキスト
 HEADING_PATTERN = re.compile(r'^(#{1,5})\s+(.+)$')
 
+# GFMパイプテーブルのセパレータ行パターン（| --- | :---: | ---: | 等）
+_TABLE_SEP_PATTERN = re.compile(r'^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?$')
+
+
+@dataclass
+class TableCell:
+    """表のセル情報。"""
+    content: str      # セルのMarkdownテキスト（書式記法を含む）
+    is_header: bool   # True → <th>、False → <td>
+
+
+@dataclass
+class TableRow:
+    """表の行情報。"""
+    cells: list[TableCell]
+
+
+@dataclass
+class TableData:
+    """GFMパイプテーブルのデータ。"""
+    header_row: TableRow
+    body_rows: list[TableRow]
+
 
 @dataclass
 class HeadingInfo:
@@ -22,8 +45,8 @@ class HeadingInfo:
     title: str                    # プレーンテキスト（nav用）
     title_xhtml: str              # XHTML形式（h1-h5用）
     title_raw: str = ""           # 元のマークダウンテキスト（process_paragraph用）
-    content: list[str] = field(default_factory=list)       # この見出し配下の段落
-    children: list['HeadingInfo'] = field(default_factory=list)  # 子見出し
+    content: list[str | TableData] = field(default_factory=list)   # この見出し配下の段落
+    children: list['HeadingInfo'] = field(default_factory=list)    # 子見出し
 
 
 @dataclass
@@ -31,7 +54,25 @@ class Section:
     """EPUBチャプター用のセクション情報。"""
     id: str                       # chapter1, chapter2, etc.
     heading: HeadingInfo          # 見出し情報
-    paragraphs: list[str] = field(default_factory=list)   # 本文段落
+    paragraphs: list[str | TableData] = field(default_factory=list)   # 本文段落
+
+
+def _is_table_separator(line: str) -> bool:
+    """GFMパイプテーブルのセパレータ行かどうかを判定する。"""
+    return bool(_TABLE_SEP_PATTERN.match(line.strip()))
+
+
+def _is_pipe_row(line: str) -> bool:
+    """パイプ区切りのデータ行かどうかを判定する（セパレータ行を除く）。"""
+    s = line.strip()
+    return '|' in s and not _is_table_separator(s)
+
+
+def _parse_table_cells(line: str) -> list[str]:
+    """パイプ区切り行からセルテキストのリストを返す。
+    例: '| Cell1 | Cell2 |' → ['Cell1', 'Cell2']
+    """
+    return [c.strip() for c in line.strip().strip('|').split('|')]
 
 
 def extract_heading(line: str) -> tuple[int, str] | None:
@@ -147,7 +188,9 @@ def parse_commonmark(file_path: str) -> tuple[HeadingInfo | None, list[str]]:
     from mathconv.converter import get_current_processor
     math_proc = get_current_processor()
 
-    for line in lines:
+    i = 0
+    while i < len(lines):
+        line = lines[i]
         heading_info = extract_heading(line)
 
         if heading_info:
@@ -170,14 +213,44 @@ def parse_commonmark(file_path: str) -> tuple[HeadingInfo | None, list[str]]:
             )
             headings.append(new_heading)
             current_heading = new_heading
+            i += 1
+
+        elif (current_heading is not None and
+              _is_pipe_row(line) and
+              i + 1 < len(lines) and
+              _is_table_separator(lines[i + 1])):
+            # GFMパイプテーブルを検出: この行がヘッダー、次行がセパレータ
+            header_cells = _parse_table_cells(line)
+            i += 2  # ヘッダー行とセパレータ行をスキップ
+
+            # ボディ行を収集
+            body_rows: list[TableRow] = []
+            while i < len(lines) and _is_pipe_row(lines[i]):
+                cells = _parse_table_cells(lines[i])
+                body_rows.append(TableRow(
+                    cells=[TableCell(c, is_header=False) for c in cells]
+                ))
+                i += 1
+
+            table = TableData(
+                header_row=TableRow(
+                    cells=[TableCell(c, is_header=True) for c in header_cells]
+                ),
+                body_rows=body_rows
+            )
+            current_heading.content.append(table)
+
         elif current_heading is not None:
-            # 現在の見出しに段落を追加
+            # 通常の段落
             if line.strip():  # 空行以外
                 # 数式を含む段落のプレースホルダー置換
                 if math_proc:
                     line = math_proc.substitute(line)
                 current_heading.content.append(line)
-        # 見出しが出現する前の段落は無視（またはルートに追加する場合は別途処理）
+            i += 1
+        else:
+            # 見出しが出現する前の行は無視
+            i += 1
 
     if not headings:
         return None, lines
@@ -289,9 +362,21 @@ def generate_reading_text(sections: list[Section]) -> str:
 
         # 段落を読み用に変換
         for para in section.paragraphs:
-            para_reading = _process_line_for_reading(para)
-            if para_reading.strip():
-                lines.append(para_reading)
+            if isinstance(para, TableData):
+                # 表: ヘッダー・ボディの各セルを1行ずつ読み上げ
+                for cell in para.header_row.cells:
+                    r = _process_line_for_reading(cell.content)
+                    if r.strip():
+                        lines.append(r)
+                for row in para.body_rows:
+                    for cell in row.cells:
+                        r = _process_line_for_reading(cell.content)
+                        if r.strip():
+                            lines.append(r)
+            else:
+                para_reading = _process_line_for_reading(para)
+                if para_reading.strip():
+                    lines.append(para_reading)
 
     return '\n'.join(lines)
 

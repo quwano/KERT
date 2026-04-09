@@ -16,7 +16,7 @@
 
     <!-- ルート要素 -->
     <xsl:template match="root">
-        <xsl:apply-templates select="title1 | title2 | title3 | title4 | title5 | p"/>
+        <xsl:apply-templates select="title1 | title2 | title3 | title4 | title5 | p | table"/>
     </xsl:template>
 
     <!-- タイトル要素: 読み仮名テキスト + 改行 -->
@@ -27,6 +27,21 @@
 
     <!-- 段落要素: 読み仮名テキスト + 改行 -->
     <xsl:template match="p">
+        <xsl:call-template name="process-inline-content"/>
+        <xsl:text>&#10;</xsl:text>
+    </xsl:template>
+
+    <!-- 表要素: 各行・各セルを処理 -->
+    <xsl:template match="table">
+        <xsl:apply-templates select="tr"/>
+    </xsl:template>
+
+    <xsl:template match="tr">
+        <xsl:apply-templates select="td | th"/>
+    </xsl:template>
+
+    <!-- セル要素: 読み仮名テキスト + 改行（段落と同様） -->
+    <xsl:template match="td | th">
         <xsl:call-template name="process-inline-content"/>
         <xsl:text>&#10;</xsl:text>
     </xsl:template>

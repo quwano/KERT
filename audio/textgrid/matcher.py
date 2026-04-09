@@ -1696,7 +1696,13 @@ def process_xml_paragraph(
 
         span_id += 1
 
-    xhtml_paragraph = f'        <p>{result}</p>' if result.strip() else ""
+    if result.strip():
+        if paragraph.lstrip().startswith('<table'):
+            xhtml_paragraph = f'        {result.strip()}'
+        else:
+            xhtml_paragraph = f'        <p>{result}</p>'
+    else:
+        xhtml_paragraph = ""
 
     return xhtml_paragraph, smil_pars, span_id, tg_index
 
