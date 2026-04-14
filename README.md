@@ -286,6 +286,8 @@ Use GFM (GitHub Flavored Markdown) pipe table notation to create tables.
 
 ### XML Format
 
+> **XML Editor**: You can easily create XML format documents using the dedicated editor **[KERT XMLEditor](https://github.com/quwano/KERT_XMLEditor)**. It allows you to edit schema-compliant XML through a GUI without writing code directly.
+
 Write XML files conforming to the XML schema (`resources/document_schema.xsd`).
 
 #### Basic Structure
@@ -613,6 +615,12 @@ python tools/unwrap_lines.py
 
 - Recognizes blank lines as paragraph separators and converts line breaks within paragraphs to spaces.
 - The output file has `_` appended to the original filename (e.g., `input.txt` -> `input_.txt`).
+
+### KERT XMLEditor — XML Document Editor
+
+A dedicated editor for creating and editing KERT XML files (`.xml`) through a GUI. You can create schema-compliant documents without writing XML code directly.
+
+- **Repository**: [https://github.com/quwano/KERT_XMLEditor](https://github.com/quwano/KERT_XMLEditor)
 
 ## Acknowledgments
 

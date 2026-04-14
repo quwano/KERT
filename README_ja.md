@@ -285,6 +285,8 @@ GFM（GitHub Flavored Markdown）パイプテーブル記法で表を記述し�
 
 ### XML 形式
 
+> **XML エディタ**: XML 形式のドキュメントは、専用エディタ **[KERT XMLEditor](https://github.com/quwano/KERT_XMLEditor)** を使うと簡単に作成できます。スキーマに準拠した XML を GUI で編集でき、コードを直接記述する必要がありません。
+
 XML スキーマ（`resources/document_schema.xsd`）に準拠した XML ファイルで記述します。
 
 #### 基本構造
@@ -613,6 +615,12 @@ python tools/unwrap_lines.py
 
 - 空行を段落区切りとして認識し、段落内の改行をスペースに変換します。
 - 出力ファイルは元のファイル名の末尾に `_` を付加した名前になります（例: `input.txt` → `input_.txt`）。
+
+### KERT XMLEditor — XML ドキュメントエディタ
+
+KERT 向け XML ファイル（`.xml`）を GUI で作成・編集できる専用エディタです。XML のコードを直接記述することなく、スキーマに準拠したドキュメントを作成できます。
+
+- **リポジトリ**: [https://github.com/quwano/KERT_XMLEditor](https://github.com/quwano/KERT_XMLEditor)
 
 ## 謝辞
 

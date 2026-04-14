@@ -286,6 +286,8 @@ Verwenden Sie die GFM-Pipe-Tabellen-Notation (GitHub Flavored Markdown) zur Erst
 
 ### XML-Format
 
+> **XML-Editor**: XML-Dokumente lassen sich einfach mit dem dedizierten Editor **[KERT XMLEditor](https://github.com/quwano/KERT_XMLEditor)** erstellen. Er ermöglicht die schemakonforme Bearbeitung von XML über eine GUI, ohne Code direkt schreiben zu müssen.
+
 Schreiben Sie XML-Dateien, die dem XML-Schema (`resources/document_schema.xsd`) entsprechen.
 
 #### Grundstruktur
@@ -613,6 +615,12 @@ python tools/unwrap_lines.py
 
 - Erkennt Leerzeilen als Absatztrennzeichen und konvertiert Zeilenumbrüche innerhalb von Absätzen in Leerzeichen.
 - Die Ausgabedatei hat `_` an den Originaldateinamen angehängt (z. B. `input.txt` -> `input_.txt`).
+
+### KERT XMLEditor — XML-Dokumenteditor
+
+Ein dedizierter Editor zum Erstellen und Bearbeiten von KERT-XML-Dateien (`.xml`) über eine GUI. Schemakonforme Dokumente lassen sich erstellen, ohne XML-Code direkt schreiben zu müssen.
+
+- **Repository**: [https://github.com/quwano/KERT_XMLEditor](https://github.com/quwano/KERT_XMLEditor)
 
 ## Danksagungen
 
