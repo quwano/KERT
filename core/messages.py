@@ -18,6 +18,15 @@ MESSAGES: dict[str, dict[str, str]] = {
         "selected_language": "選択された言語: {name}",
         "default_language": "デフォルト言語を使用: {name}",
 
+        # キャンセル
+        "operation_cancelled": "操作をキャンセルしました。",
+
+        # VOICEVOX起動チェック
+        "voicevox_not_running": "[警告] VOICEVOXが起動していないようです（接続タイムアウト）。",
+        "voicevox_retry_prompt": "VOICEVOXを起動後、Enterキーを押すと再確認します（Ctrl+Cで中止）: ",
+        "voicevox_ok": "VOICEVOXへの接続を確認しました。",
+        "voicevox_still_not_running": "[警告] 引き続きVOICEVOXに接続できません。後続の音声生成ステップでエラーになる可能性があります。",
+
         # 入力形式選択
         "select_input_format": "入力形式を選択してください:",
         "opt_commonmark": "CommonMark拡張テキストファイル（.txt/.md）",
@@ -156,6 +165,15 @@ MESSAGES: dict[str, dict[str, str]] = {
         "language_prompt": "Language (1-{n}, default: 1): ",
         "selected_language": "Selected language: {name}",
         "default_language": "Using default language: {name}",
+
+        # Cancel
+        "operation_cancelled": "Operation cancelled.",
+
+        # VOICEVOX startup check
+        "voicevox_not_running": "[Warning] VOICEVOX does not appear to be running (connection timeout).",
+        "voicevox_retry_prompt": "Start VOICEVOX, then press Enter to retry (Ctrl+C to abort): ",
+        "voicevox_ok": "VOICEVOX connection confirmed.",
+        "voicevox_still_not_running": "[Warning] Still cannot connect to VOICEVOX. Audio generation may fail later.",
 
         # Input format selection
         "select_input_format": "Select input format:",

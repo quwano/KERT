@@ -19,6 +19,7 @@ from core.config import (
     LANGUAGE_CONFIGS,
     get_language_config,
     LanguageConfig,
+    VOICEVOX_BASE_URL,
 )
 from core.exceptions import EpubGenerationError
 from core.metadata_reader import (
@@ -263,6 +264,91 @@ def _handle_intermediate_files(
 
 
 # =============================================================================
+# ESC / Ctrl+C による即時終了サポート
+# =============================================================================
+
+class _UserCancel(Exception):
+    """ESCキーまたはCtrl+Cによるユーザー操作のキャンセル。"""
+    pass
+
+
+def _prompt_input(prompt: str = '') -> str:
+    """ESCキーまたはCtrl+Cで即時終了するinput()ラッパー。
+
+    stdin がttyでない場合（パイプ・テスト用途）は通常のinput()にフォールバックする。
+    """
+    import sys
+
+    if not sys.stdin.isatty():
+        result = input(prompt)
+        # ESC 文字（\x1b）が含まれていたらキャンセル扱い
+        if '\x1b' in result:
+            raise _UserCancel
+        return result
+
+    if prompt:
+        sys.stdout.write(prompt)
+        sys.stdout.flush()
+
+    if sys.platform == 'win32':
+        import msvcrt
+        chars: list[str] = []
+        while True:
+            c = msvcrt.getwch()
+            if c == '\x1b':                  # ESC
+                sys.stdout.write('\n')
+                sys.stdout.flush()
+                raise _UserCancel
+            elif c == '\r':                  # Enter
+                sys.stdout.write('\n')
+                sys.stdout.flush()
+                return ''.join(chars)
+            elif c == '\x03':               # Ctrl+C
+                raise KeyboardInterrupt
+            elif c in ('\x08', '\x7f'):     # Backspace
+                if chars:
+                    chars.pop()
+                    sys.stdout.write('\b \b')
+                    sys.stdout.flush()
+            else:
+                chars.append(c)
+                sys.stdout.write(c)
+                sys.stdout.flush()
+    else:
+        import os, tty, termios
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        chars: list[str] = []
+        try:
+            tty.setraw(fd)
+            while True:
+                # os.read で直接FDから1バイト読み取り（Pythonのバッファリングを回避）
+                b = os.read(fd, 1)
+                c = b.decode('utf-8', errors='replace')
+                if c == '\x1b':              # ESC
+                    sys.stdout.write('\n')
+                    sys.stdout.flush()
+                    raise _UserCancel
+                elif c in ('\r', '\n'):      # Enter
+                    sys.stdout.write('\n')
+                    sys.stdout.flush()
+                    return ''.join(chars)
+                elif c == '\x03':           # Ctrl+C
+                    raise KeyboardInterrupt
+                elif c in ('\x7f', '\x08'): # Backspace
+                    if chars:
+                        chars.pop()
+                        sys.stdout.write('\b \b')
+                        sys.stdout.flush()
+                else:
+                    chars.append(c)
+                    sys.stdout.write(c)
+                    sys.stdout.flush()
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+
+# =============================================================================
 # UI入力ヘルパー関数
 # =============================================================================
 
@@ -293,7 +379,7 @@ def _prompt_choice(
         print(f"  {i}: {option}")
     logger.separator("-")
 
-    choice = input(msg("choice_prompt", n=len(options), d=default)).strip()
+    choice = _prompt_input(msg("choice_prompt", n=len(options), d=default)).strip()
 
     if not choice:
         return default
@@ -309,6 +395,17 @@ def _prompt_choice(
     return default
 
 
+def _check_voicevox_running() -> bool:
+    """VOICEVOXが起動しているか HTTP で確認する。"""
+    import urllib.request
+    import urllib.error
+    try:
+        urllib.request.urlopen(f"{VOICEVOX_BASE_URL}/version", timeout=2)
+        return True
+    except Exception:
+        return False
+
+
 def _prompt_language() -> tuple[LanguageConfig, int]:
     """言語選択を行う。"""
     print(msg("select_language"))
@@ -319,7 +416,7 @@ def _prompt_language() -> tuple[LanguageConfig, int]:
         print(f"  {i}: {config.display_name} ({lang_code})")
     logger.separator("-")
 
-    choice = input(msg("language_prompt", n=len(lang_options))).strip()
+    choice = _prompt_input(msg("language_prompt", n=len(lang_options))).strip()
 
     try:
         index = int(choice) - 1 if choice else 0
@@ -373,9 +470,9 @@ def _prompt_source_path(file_type: str, file_ext: str, is_folder: bool) -> str:
     """ソースパス入力を行う。"""
     logger.separator("-")
     if is_folder:
-        return input(msg("prompt_folder_path", type=file_type))
+        return _prompt_input(msg("prompt_folder_path", type=file_type))
     else:
-        return input(msg("prompt_file_path", type=file_type, ext=file_ext))
+        return _prompt_input(msg("prompt_file_path", type=file_type, ext=file_ext))
 
 
 def _prompt_keep_intermediate(output_dir: Path) -> bool:
@@ -770,6 +867,17 @@ def main() -> None:
     lang_config, lang_choice = _prompt_language()
     logger.separator("-")
 
+    # ja_JP 選択時: VOICEVOX 早期起動チェック
+    if lang_config.code == 'ja_JP':
+        if not _check_voicevox_running():
+            logger.warning(msg("voicevox_not_running"))
+            _prompt_input(msg("voicevox_retry_prompt"))
+            if _check_voicevox_running():
+                logger.info(msg("voicevox_ok"))
+            else:
+                logger.warning(msg("voicevox_still_not_running"))
+        logger.separator("-")
+
     # 入力形式選択
     input_format, format_choice = _prompt_input_format()
     logger.separator("-")
@@ -793,4 +901,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except (KeyboardInterrupt, _UserCancel):
+        print()
+        print(msg("operation_cancelled"))

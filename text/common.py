@@ -1,5 +1,18 @@
+import json
 import re
 from pathlib import Path
+
+
+def _load_reading_map_config() -> dict:
+    """resources/reading_map.json を読み込んでユーザー定義の読みマップを返す。"""
+    config_path = Path(__file__).parent.parent / "resources" / "reading_map.json"
+    if config_path.exists():
+        try:
+            with open(config_path, encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
 
 
 # =============================================================================
@@ -75,6 +88,8 @@ class TextNormalizer:
         # 波ダッシュ
         "〜": "から", "～": "から",
     }
+    # resources/reading_map.json の内容で拡張・上書き（ユーザー編集可）
+    READING_MAP.update(_load_reading_map_config())
 
     @classmethod
     def to_reading(cls, text: str) -> str:
