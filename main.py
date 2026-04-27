@@ -44,6 +44,7 @@ class InputFormat(Enum):
     """入力形式を表す列挙型。"""
     COMMONMARK_EXT = "commonmark_ext"
     XML = "xml"
+    PDF = "pdf"
 
     @property
     def display_name(self) -> str:
@@ -51,6 +52,7 @@ class InputFormat(Enum):
         names = {
             InputFormat.COMMONMARK_EXT: msg("display_commonmark"),
             InputFormat.XML: "XML",
+            InputFormat.PDF: "PDF",
         }
         return names[self]
 
@@ -60,6 +62,7 @@ class InputFormat(Enum):
         names = {
             InputFormat.COMMONMARK_EXT: msg("display_commonmark"),
             InputFormat.XML: "XML",
+            InputFormat.PDF: "PDF",
         }
         return names[self]
 
@@ -69,6 +72,7 @@ class InputFormat(Enum):
         extensions = {
             InputFormat.COMMONMARK_EXT: ".txt/.md",
             InputFormat.XML: ".xml",
+            InputFormat.PDF: ".pdf",
         }
         return extensions[self]
 
@@ -78,6 +82,7 @@ class InputFormat(Enum):
         patterns = {
             InputFormat.COMMONMARK_EXT: "*.txt",  # .mdは別途追加
             InputFormat.XML: "*.xml",
+            InputFormat.PDF: "*.pdf",
         }
         return patterns[self]
 
@@ -86,6 +91,7 @@ class ProcessingMode(Enum):
     """処理モードを表す列挙型。"""
     SINGLE_FILE = "single"
     FOLDER = "folder"
+    PDF_TO_MD = "pdf_to_md"  # PDF→Markdown変換のみ（EPUB生成なし）
 
 
 # =============================================================================
@@ -436,12 +442,14 @@ def _prompt_input_format() -> tuple[InputFormat, int]:
     options = [
         msg("opt_commonmark"),
         msg("opt_xml"),
+        msg("opt_pdf"),
     ]
     choice = _prompt_choice(msg("select_input_format"), options, default=1)
 
     format_map = {
         1: InputFormat.COMMONMARK_EXT,
         2: InputFormat.XML,
+        3: InputFormat.PDF,
     }
     return format_map.get(choice, InputFormat.COMMONMARK_EXT), choice
 
@@ -454,8 +462,28 @@ def _get_highlight_mode(input_format: InputFormat) -> str:
     return "punctuation"
 
 
+def _prompt_pdf_heading_mode() -> str:
+    """PDF見出し検出モードを選択する。"""
+    options = [
+        msg("opt_heading_visual"),
+        msg("opt_heading_legal"),
+        msg("opt_heading_symbol"),
+    ]
+    choice = _prompt_choice(msg("pdf_heading_mode_question"), options, default=1)
+    return {1: 'visual', 2: 'legal', 3: 'symbol'}.get(choice, 'visual')
+
+
 def _prompt_processing_mode(file_type: str) -> tuple[ProcessingMode, int]:
     """処理モード選択を行う。"""
+    if file_type == "PDF":
+        options = [
+            msg("opt_pdf_to_epub"),
+            msg("opt_pdf_to_md"),
+        ]
+        choice = _prompt_choice(msg("select_processing_mode"), options, default=1)
+        mode = ProcessingMode.PDF_TO_MD if choice == 2 else ProcessingMode.SINGLE_FILE
+        return mode, choice
+
     options = [
         msg("opt_single", type=file_type),
         msg("opt_folder", type=file_type),
@@ -765,6 +793,88 @@ def process_commonmark_folder(
     _log_processing_end(ctx)
 
 
+def process_pdf_to_md(source_file: str, heading_mode: str = 'legal') -> None:
+    """PDFからMarkdownファイルを生成する（EPUB生成なし）。"""
+    source_path = Path(source_file)
+    _validate_file_exists(source_path)
+
+    from parsers.source_adapter import PDFSourceAdapter
+    adapter = PDFSourceAdapter(source_file, heading_mode=heading_mode)
+
+    md_path = source_path.parent / (source_path.stem + ".md")
+    adapter.save_as_commonmark(str(md_path))
+
+    logger.info(msg("pdf_md_saved", path=md_path))
+    print(msg("pdf_md_hint"))
+
+
+def process_pdf_to_epub(
+    source_file: str,
+    highlight_mode: str,
+    lang_config: LanguageConfig | None,
+    keep_intermediate: bool,
+    mode_string: str = "",
+    heading_mode: str = 'legal'
+) -> None:
+    """PDFからEPUBを生成する。Markdownを中間ファイルとして常に保存する。"""
+    source_path = Path(source_file)
+    _validate_file_exists(source_path)
+
+    from parsers.source_adapter import PDFSourceAdapter
+    from epub.builder_commonmark import build_commonmark_epub
+    from parsers.commonmark import get_book_title
+
+    # コンテキスト生成
+    ctx = ProcessingContext.create(source_path, lang_config, keep_intermediate, mode_string=mode_string)
+    _log_processing_start(ctx.start_time)
+
+    # Markdownを中間ファイルとして保存
+    md_path = source_path.parent / (source_path.stem + ".md")
+    adapter = PDFSourceAdapter(source_file, heading_mode=heading_mode)
+    adapter.save_as_commonmark(str(md_path))
+    logger.info(msg("pdf_md_saved", path=md_path))
+    print(msg("pdf_md_hint"))
+
+    # メタデータ（PDFと同じディレクトリのmetadata.txt）
+    metadata = load_metadata_for_single_file(source_file)
+
+    # 書籍タイトル
+    heading_root = adapter.get_heading_hierarchy()
+    book_title = get_book_title(heading_root) if heading_root else (metadata.title if metadata else source_path.stem)
+
+    # 音声生成
+    audio_txt = f"{AUDIO_BASE_NAME}.txt"
+    wav_file = f"{AUDIO_BASE_NAME}{PRIMARY_SOUND_SUFFIX}"
+    mp3_file = f"{AUDIO_BASE_NAME}{SECONDARY_SOUND_SUFFIX}"
+    textgrid_file = Path(f"{AUDIO_BASE_NAME}.TextGrid")
+
+    logger.info(msg("audio_start", file=source_file))
+    generate_audio_with_textgrid(adapter, audio_txt, wav_file, mp3_file, lang_config=lang_config)
+
+    # EPUB生成
+    build_commonmark_epub(
+        book_title=book_title,
+        adapter=adapter,
+        output_epub=ctx.output_epub,
+        textgrid_path=textgrid_file,
+        audio_path=Path(mp3_file),
+        highlight_mode=highlight_mode,
+        metadata=metadata,
+        epub_lang=ctx.epub_lang
+    )
+
+    # 後処理
+    _handle_intermediate_files(ctx.output_dir, ctx.keep_intermediate, INTERMEDIATE_FILES_SINGLE)
+
+    # PDF図版の中間ディレクトリを後処理（keep=Falseのとき削除）
+    if not ctx.keep_intermediate:
+        pdf_int_dir = source_path.resolve().parent / "intermediate_products"
+        if pdf_int_dir.exists():
+            shutil.rmtree(pdf_int_dir)
+
+    _log_processing_end(ctx)
+
+
 # =============================================================================
 # メイン関数
 # =============================================================================
@@ -828,6 +938,20 @@ def _execute_processing(
     is_folder = processing_mode == ProcessingMode.FOLDER
     file_type = input_format.file_type_name
     file_ext = input_format.file_extension
+
+    # PDF処理: 数式チェック・数式初期化不要、ソース取得後に早期分岐
+    if input_format == InputFormat.PDF:
+        source = _prompt_source_path(file_type, file_ext, is_folder=False)
+        source = source.strip().strip('"').strip("'")
+        heading_mode = _prompt_pdf_heading_mode()
+
+        if processing_mode == ProcessingMode.PDF_TO_MD:
+            process_pdf_to_md(source, heading_mode=heading_mode)
+        else:
+            keep = _prompt_keep_intermediate(Path(source).parent)
+            process_pdf_to_epub(source, highlight_mode, lang_config, keep,
+                                 mode_string=mode_string, heading_mode=heading_mode)
+        return
 
     # 数式サポートを初期化（ソース解析前に実行）
     from mathconv.converter import init_math_support

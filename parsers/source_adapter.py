@@ -12,6 +12,7 @@ from parsers.xml_converter import convert_xml_to_audio_txt, get_sections_from_xm
 if TYPE_CHECKING:
     from parsers.commonmark import Section, HeadingInfo
     from parsers.xml_converter import XmlSection
+    from parsers.pdf_converter import pdf_to_commonmark as _pdf_to_commonmark
 
 
 class SourceAdapter(ABC):
@@ -52,7 +53,8 @@ class SourceAdapter(ABC):
     @staticmethod
     def create(
         file_path: str,
-        is_xml: bool = False
+        is_xml: bool = False,
+        heading_mode: str = 'legal'
     ) -> "SourceAdapter":
         """
         ファイルパスとフラグから適切なアダプターを生成する。
@@ -71,6 +73,8 @@ class SourceAdapter(ABC):
         """
         if is_xml:
             return XMLSourceAdapter(file_path)
+        elif file_path.lower().endswith('.pdf'):
+            return PDFSourceAdapter(file_path, heading_mode=heading_mode)
         else:
             return CommonMarkSourceAdapter(file_path)
 
@@ -235,3 +239,88 @@ class CommonMarkSourceAdapter(SourceAdapter):
     def get_heading_hierarchy(self) -> "HeadingInfo | None":
         """見出し階層のルートを取得する（nav生成用）。"""
         return self._root_heading
+
+
+class PDFSourceAdapter(SourceAdapter):
+    """PDFファイル用アダプター。
+
+    pdfplumber でテキストを抽出し、CommonMark と同じ
+    HeadingInfo/Section ツリーを構築します。
+    EPUB 生成には builder_commonmark を流用します。
+    """
+
+    def __init__(self, file_path: str, heading_mode: str = 'legal'):
+        self._sections: list["Section"] = []
+        self._root_heading: "HeadingInfo | None" = None
+        self._heading_mode = heading_mode
+        super().__init__(file_path)
+
+    def _load(self) -> None:
+        """PDF を解析して見出し階層を構築する。"""
+        from parsers.pdf_converter import parse_pdf
+        from parsers.commonmark import split_into_sections
+
+        self._root_heading, _ = parse_pdf(self.file_path, heading_mode=self._heading_mode)
+
+        if self._root_heading:
+            self._sections = split_into_sections(self._root_heading)
+            self._title = self._root_heading.title
+            self._title_xhtml = self._root_heading.title_xhtml
+
+            all_paragraphs: list[str] = []
+            for section in self._sections:
+                all_paragraphs.append(section.heading.title)
+                for para in section.paragraphs:
+                    if isinstance(para, str):
+                        all_paragraphs.append(para)
+            self._paragraphs = all_paragraphs
+
+    def generate_reading_text(self, output_path: str) -> None:
+        """TTS 用読み上げテキストを生成する。"""
+        from parsers.commonmark import generate_reading_text
+        reading_text = generate_reading_text(self._sections)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(reading_text)
+
+    def get_body_paragraphs(self) -> list[str]:
+        """タイトルを除いた本文段落を返す（複数ファイル処理用）。"""
+        if not self._sections:
+            return []
+        body: list[str] = []
+        for i, section in enumerate(self._sections):
+            if i == 0:
+                for para in section.paragraphs:
+                    if isinstance(para, str):
+                        body.append(para)
+            else:
+                body.append(section.heading.title)
+                for para in section.paragraphs:
+                    if isinstance(para, str):
+                        body.append(para)
+        return body
+
+    def has_headings(self) -> bool:
+        """PDF は常に見出し階層を持つ。"""
+        return True
+
+    def get_sections(self) -> list["Section"]:
+        """セクションリストを取得する。"""
+        return self._sections
+
+    def get_heading_hierarchy(self) -> "HeadingInfo | None":
+        """見出し階層のルートを取得する（nav 生成用）。"""
+        return self._root_heading
+
+    def save_as_commonmark(self, output_path: str) -> None:
+        """
+        抽出した内容を CommonMark ファイルとして保存する。
+
+        保存したファイルにユーザーが yomikae・ルビ等を追記後、
+        CommonMark として再処理できます。
+        """
+        from parsers.pdf_converter import pdf_to_commonmark
+        if self._root_heading is None:
+            raise ValueError("PDF が読み込まれていません。")
+        md_text = pdf_to_commonmark(self._root_heading)
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(md_text)

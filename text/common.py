@@ -214,6 +214,9 @@ FRAME_PATTERN = re.compile(
 # 画像記法のパターン: ![代替テキスト](パス)
 IMAGE_PATTERN = re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
 
+# 行全体が画像参照のみのパターン（SMILマッチングバイパス判定用）
+IMAGE_ONLY_PAT = re.compile(r'^!\[[^\]]*\]\([^)]+\)$')
+
 # 枠のスタイル（一箇所で管理）
 FRAME_STYLE = "border: solid 2px; padding: 0.25em; margin:0em 0.2em 0em 0.2em; white-space: nowrap;"
 

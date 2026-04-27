@@ -31,11 +31,22 @@ MESSAGES: dict[str, dict[str, str]] = {
         "select_input_format": "入力形式を選択してください:",
         "opt_commonmark": "CommonMark拡張テキストファイル（.txt/.md）",
         "opt_xml": "XMLファイル（.xml）",
+        "opt_pdf": "PDFファイル（.pdf）",
 
         # 処理モード選択
         "select_processing_mode": "処理モードを選択してください:",
         "opt_single": "単一{type}ファイルからEPUB生成",
         "opt_folder": "フォルダ内の複数{type}ファイルからEPUB生成",
+        "opt_pdf_to_epub": "PDFからEPUBを生成（Markdownを中間ファイルとして保存）",
+        "opt_pdf_to_md": "PDFからMarkdownを生成（中間ファイル出力のみ）",
+
+        # PDF処理
+        "pdf_md_saved": "Markdownファイルを保存しました: {path}",
+        "pdf_md_hint": "yomikae・ルビ等を追記後、CommonMarkとして再処理できます。",
+        "pdf_heading_mode_question": "PDFの見出し検出方式を選択してください：",
+        "opt_heading_visual": "1. レイアウト重視（ウェブページ・デザイン文書等）",
+        "opt_heading_legal": "2. 法令文言（法令・規則・契約書等）",
+        "opt_heading_symbol": "3. 番号付き・記号付き（報告書・マニュアル等）",
 
         # 共通選択UI
         "choice_prompt": "選択 (1-{n}, デフォルト: {d}): ",
@@ -179,11 +190,22 @@ MESSAGES: dict[str, dict[str, str]] = {
         "select_input_format": "Select input format:",
         "opt_commonmark": "CommonMark extended text file (.txt/.md)",
         "opt_xml": "XML file (.xml)",
+        "opt_pdf": "PDF file (.pdf)",
 
         # Processing mode selection
         "select_processing_mode": "Select processing mode:",
         "opt_single": "Generate EPUB from a single {type} file",
         "opt_folder": "Generate EPUB from multiple {type} files in a folder",
+        "opt_pdf_to_epub": "Generate EPUB from PDF (save Markdown as intermediate file)",
+        "opt_pdf_to_md": "Generate Markdown from PDF (intermediate file output only)",
+
+        # PDF processing
+        "pdf_md_saved": "Markdown file saved: {path}",
+        "pdf_md_hint": "You can add yomikae/ruby annotations and reprocess as CommonMark.",
+        "pdf_heading_mode_question": "Select heading detection mode for PDF:",
+        "opt_heading_visual": "1. Layout-based (web pages, designed documents, etc.)",
+        "opt_heading_legal": "2. Legal language (laws, regulations, contracts, etc.)",
+        "opt_heading_symbol": "3. Numbered/symbol-prefixed (reports, manuals, etc.)",
 
         # Common selection UI
         "choice_prompt": "Selection (1-{n}, default: {d}): ",

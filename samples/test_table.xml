@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+  <title1>表テスト</title1>
+  <p>本文段落。地震について説明します。</p>
+  <table>
+    <tr><th>項目</th><th>値</th></tr>
+    <tr><td>地震の強さ。</td><td>マグニチュード7。</td></tr>
+    <tr><td>震源地。</td><td>東北地方。</td></tr>
+  </table>
+  <p>表の後の段落。</p>
+</root>

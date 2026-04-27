@@ -47,6 +47,7 @@ VOICEVOX wird für die japanische Sprachsynthese verwendet.
 
 | Bibliothek | Lizenz | Zweck |
 |-----------|--------|-------|
+| [radicalchar](https://github.com/yamamaya/radicalchar) | The Unlicense | Normalisierung von CJK-Radicals-Supplement- und Kangxi-Radikals-Zeichen bei der PDF-Textextraktion |
 | [textgrid](https://github.com/kylebgorman/textgrid) | MIT License | Lesen von TextGrid-Dateien |
 | [saxonche](https://pypi.org/project/saxonche/) | MPL 2.0 | XSLT 3.0-Prozessor |
 | [FFmpeg](https://ffmpeg.org/) | LGPL / GPL | Audiokonvertierung von WAV zu MP3 |
