@@ -1,0 +1,17 @@
+/META-INF
+/OEBPS
+/test_yomikae_kai_extracted
+*.epub
+audio.aiff
+audio.mp3
+audio.TextGrid
+audio.txt
+/zuhan/*
+/work_multi
+/.claude
+*.wav
+samples/Pandoc/intermediate_products
+samples/windows
+node_modules/
+package-lock.json
+.claude/settings.local.json
