@@ -164,6 +164,13 @@ else
         echo "  ファイル: python-3.12.10-macos11.pkg"
         echo ""
     fi
+
+    echo "[3/3] pdfplumber Pillow をインストールしています..."
+    if $PY_CMD -m pip install pdfplumber Pillow; then
+        echo "[完了] pdfplumber Pillow のインストールが完了しました。"
+    else
+        echo -e "${RED}[エラー] pdfplumber Pillow のインストールに失敗しました。${NC}"
+    fi
 fi
 
 ask_continue
@@ -438,7 +445,7 @@ else
     echo "使用する Python: $PY_CMD ($($PY_CMD --version))"
     echo ""
 
-    echo "[1/2] textgrid をインストールしています..."
+    echo "[1/3] textgrid をインストールしています..."
     if $PY_CMD -m pip install textgrid; then
         echo "[完了] textgrid のインストールが完了しました。"
     else
@@ -447,7 +454,7 @@ else
 
     echo ""
 
-    echo "[2/2] saxonche をインストールしています..."
+    echo "[2/3] saxonche をインストールしています..."
     if $PY_CMD -m pip install saxonche; then
         echo "[完了] saxonche のインストールが完了しました。"
     else

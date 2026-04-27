@@ -159,6 +159,13 @@ else
         echo "  Datei: python-3.12.10-macos11.pkg"
         echo ""
     fi
+
+    echo "[3/3] pdfplumber Pillow wird installiert..."
+    if $PY_CMD -m pip install pdfplumber Pillow; then
+        echo "[Fertig] pdfplumber Pillow wurde erfolgreich installiert."
+    else
+        echo -e "${RED}[Fehler] pdfplumber Pillow-Installation fehlgeschlagen.${NC}"
+    fi
 fi
 
 ask_continue
@@ -369,7 +376,7 @@ else
     echo "Verwendetes Python: $PY_CMD ($($PY_CMD --version))"
     echo ""
 
-    echo "[1/2] textgrid wird installiert..."
+    echo "[1/3] textgrid wird installiert..."
     if $PY_CMD -m pip install textgrid; then
         echo "[Fertig] textgrid wurde erfolgreich installiert."
     else
@@ -378,7 +385,7 @@ else
 
     echo ""
 
-    echo "[2/2] saxonche wird installiert..."
+    echo "[2/3] saxonche wird installiert..."
     if $PY_CMD -m pip install saxonche; then
         echo "[Fertig] saxonche wurde erfolgreich installiert."
     else

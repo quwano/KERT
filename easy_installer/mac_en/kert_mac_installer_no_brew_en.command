@@ -159,6 +159,13 @@ else
         echo "  File: python-3.12.10-macos11.pkg"
         echo ""
     fi
+
+    echo "[3/3] Installing pdfplumber Pillow..."
+    if $PY_CMD -m pip install pdfplumber Pillow; then
+        echo "[Done] pdfplumber Pillow installation complete."
+    else
+        echo -e "${RED}[Error] pdfplumber Pillow installation failed.${NC}"
+    fi
 fi
 
 ask_continue
