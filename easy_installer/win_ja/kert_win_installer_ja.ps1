@@ -28,6 +28,16 @@ function Ask-Continue {
         Show-Abort
         exit 1
     }
+    Write-Host ""
+
+    # --- pdfplumber Pillow（PDF処理用）---
+    Write-Host "[3/3] pdfplumber Pillow をインストールしています..."
+    & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "pdfplumber", "Pillow"))
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "[完了] pdfplumber Pillow のインストールが完了しました。"
+    } else {
+        Write-Host "[エラー] pdfplumber Pillow のインストールに失敗しました。" -ForegroundColor Red
+    }
 }
 
 function Show-Abort {
@@ -446,7 +456,7 @@ if ($null -eq $pyExe) {
     Write-Host ""
 
     # --- textgrid（純 Python、全プラットフォーム対応）---
-    Write-Host "[1/2] textgrid をインストールしています..."
+    Write-Host "[1/3] textgrid をインストールしています..."
     $pyArgs = $pyExe.Split()
     & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "textgrid"))
     if ($LASTEXITCODE -eq 0) {
@@ -458,7 +468,7 @@ if ($null -eq $pyExe) {
     Write-Host ""
 
     # --- saxonche（SaxonC バインディング、ARM64 Windows 非対応）---
-    Write-Host "[2/2] saxonche をインストールしています..."
+    Write-Host "[2/3] saxonche をインストールしています..."
     $arch = $env:PROCESSOR_ARCHITECTURE
     if ($arch -eq "ARM64") {
         Write-Host ""

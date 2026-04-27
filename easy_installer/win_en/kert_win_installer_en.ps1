@@ -28,6 +28,16 @@ function Ask-Continue {
         Show-Abort
         exit 1
     }
+    Write-Host ""
+
+    # --- pdfplumber Pillow (PDF processing) ---
+    Write-Host "[3/3] Installing pdfplumber Pillow..."
+    & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "pdfplumber", "Pillow"))
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "[Done] pdfplumber Pillow installation complete."
+    } else {
+        Write-Host "[Error] pdfplumber Pillow installation failed." -ForegroundColor Red
+    }
 }
 
 function Show-Abort {

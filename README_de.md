@@ -10,7 +10,7 @@
 
 KERT ist ein Werkzeug, das aus Textdateien **DAISY4/EPUB3-E-Books mit Media Overlay (Audiosynchronisierung)** erzeugt. Es ist in Python geschrieben.
 
-Als Eingabeformate werden die **erweiterte CommonMark-Notation** (`.txt` / `.md`) sowie das **XML-Format** (`.xml`) unterstützt.
+Als Eingabeformate werden die **erweiterte CommonMark-Notation** (`.txt` / `.md`), das **XML-Format** (`.xml`) sowie das **PDF-Format** (`.pdf`) unterstützt.
 
 ### Verarbeitungsablauf
 
@@ -22,6 +22,16 @@ Eingabedatei (.txt / .md / .xml)
     |  Montreal Forced Aligner führt Audioausrichtung durch (TextGrid-Erzeugung)
     |  XHTML + SMIL-Erzeugung & EPUB-Paketierung
 EPUB3-Datei (mit Audiosynchronisierung)
+
+PDF-Eingabe (.pdf)
+    |  pdfplumber: Textextraktion + Überschriftenerkennung (3 Modi)
+    |  Pillow: Bildextraktion → intermediate_products/figures/
+    |  TTS → WAV → MP3 → TextGrid (MFA) → EPUB-Paketierung
+EPUB3-Datei (mit Audiosynchronisierung)
+
+PDF → Markdown-Export (ohne Audio):
+    |  pdfplumber: Textextraktion
+Markdown-Datei (.md) ← Mit Yomikae/Ruby-Notation ergänzen und als CommonMark neu verarbeiten
 ```
 
 ## Schnellinstallation
@@ -120,8 +130,11 @@ Installierte Pakete:
 |-------|-------|
 | `textgrid` | Lesen von TextGrid-Dateien, die von MFA erzeugt wurden |
 | `saxonche` | XSLT 3.0-Prozessor |
+| `pdfplumber` | PDF-Text- und Bildextraktion |
+| `Pillow` | Speichern von PDF-Abbildungen als Bilddateien |
 
-saxonche wird für die XML-Eingabekonvertierung verwendet. Es ist nicht erforderlich, wenn Sie nur CommonMark-Eingaben verwenden. Falls nicht benötigt, entfernen Sie den saxonche-Eintrag aus requirements.txt.
+saxonche wird für die XML-Eingabekonvertierung verwendet. Bei ausschließlicher Verwendung von CommonMark- oder PDF-Eingaben ist es nicht erforderlich.
+pdfplumber und Pillow werden für die PDF-Eingabe benötigt. Pillow ist nur erforderlich, wenn Abbildungen aus PDFs extrahiert werden sollen.
 
 ### Unterstützung für mathematische Formeln (Optional)
 
@@ -365,6 +378,36 @@ Die Verwendung von `title1` bis `title5` teilt den Inhalt bei jeder Überschrift
 </root>
 ```
 
+### PDF-Format (`.pdf`)
+
+KERT extrahiert Text und Abbildungen aus PDF-Dateien und erzeugt eine EPUB- oder Markdown-Datei.
+
+> **Hinweis**: Nur PDFs mit eingebettetem Text werden unterstützt. Gescannte (nur-Bild-)PDFs werden nicht unterstützt.
+
+#### Überschriften-Erkennungsmodi
+
+Bei der PDF-Verarbeitung wählen Sie einen von drei Modi:
+
+| Modus | Geeignet für | Erkennungsmethode |
+|-------|------------|-----------------|
+| **1. Layout-basiert** | Webseiten, Broschüren, gestaltete Dokumente | Schriftgröße, Farbe, Hintergrundrechtecke |
+| **2. Rechtliche Sprache** | Gesetze, Verordnungen, Verträge | Muster wie 第n章、第n条 usw. |
+| **3. Nummeriert / Symbol** | Berichte, Handbücher, Gliederungen | ■, 【...】, `1.`, `①`, `⑴` |
+
+#### Konfigurationsdatei für Überschriftenmuster
+
+`resources/pdf_heading_patterns.json` enthält die regulären Ausdrücke für jeden Erkennungsmodus. Sie können Muster durch direkte Bearbeitung dieser Datei hinzufügen oder entfernen.
+
+#### Abbildungsextraktion
+
+In der PDF eingebettete Bilder werden automatisch nach `intermediate_products/figures/` extrahiert und in das erzeugte EPUB eingebunden. Erfordert Pillow (`pip install Pillow`).
+
+#### PDF → Markdown-Export
+
+Sie können eine PDF auch als Markdown-Datei (`.md`) exportieren, ohne Audio oder EPUB zu erzeugen. Die generierte Markdown-Datei kann mit Yomikae-/Ruby-Notation ergänzt und dann als CommonMark-Eingabe neu verarbeitet werden.
+
+---
+
 ### Metadatendatei (metadata.txt)
 
 Eine Textdatei mit bibliografischen Informationen (Titel, Autor usw.) für das EPUB. **Der Titel ist erforderlich.**
@@ -445,10 +488,13 @@ python main.py
 Sie werden interaktiv aufgefordert, Folgendes auszuwählen:
 
 1. **Sprache**: Japanisch / Englisch (US) / Deutsch
-2. **Eingabeformat**: Erweiterte CommonMark-Textdatei / XML-Datei
-3. **Verarbeitungsmodus**: Einzeldatei / Ordner (mehrere Dateien)
-4. **Eingabepfad**: Datei- oder Ordnerpfad
-5. **Zwischendateien**: Ob diese behalten werden sollen
+2. **Eingabeformat**: Erweiterte CommonMark-Textdatei / XML-Datei / **PDF-Datei**
+3. **Verarbeitungsmodus**: Einzeldatei / Ordner (mehrere Dateien) / *(nur PDF)* Markdown erzeugen
+4. **(nur PDF) Überschriften-Erkennungsmodus**: Layout-basiert / Rechtliche Sprache / Nummeriert & Symbol
+5. **Eingabepfad**: Datei- oder Ordnerpfad
+6. **Zwischendateien**: Ob diese behalten werden sollen
+
+> **Tipp**: Drücken Sie **ESC** oder **Ctrl+C** an jeder Eingabeaufforderung, um den Vorgang sofort abzubrechen und zu beenden.
 
 ### Ausführungsbeispiel
 
@@ -524,6 +570,26 @@ Wenn Sie „Zwischendateien behalten" wählen, werden folgende Dateien im Verzei
 | `OEBPS/` | EPUB-Inhalt |
 
 Sie können Formatierungskonvertierungsergebnisse und Span-Aufteilung durch Prüfen der XHTML-Zwischendateien debuggen.
+
+## Anpassung
+
+### Lesekarte für Zeichen (`resources/reading_map.json`)
+
+Definiert, wie Sonderzeichen für TTS/MFA-Audioausrichtung konvertiert werden. Die integrierte Karte enthält Kreiszahlen (①②…), römische Ziffern (Ⅰ Ⅱ…) und gängige Klammern. Durch Bearbeitung von `resources/reading_map.json` können Einträge hinzugefügt oder überschrieben werden:
+
+```json
+{
+  "〔": "",
+  "〕": "",
+  "①": "いち"
+}
+```
+
+`""` bedeutet, das Zeichen aus dem Vorlesetext zu entfernen (nützlich für Zeichen, die MFA nicht verarbeiten kann). Ein Zeichenkettenwert überschreibt die eingebaute Lesung.
+
+### PDF-Überschriftenmuster (`resources/pdf_heading_patterns.json`)
+
+Definiert reguläre Ausdrücke für jeden PDF-Überschriften-Erkennungsmodus. Bearbeiten Sie diese Datei, um Muster je nach Dokumenttyp anzupassen. Die Schwellenwerte des Layout-Modus (Schriftgrößenverhältnis, Score-Grenzen) sind ebenfalls konfigurierbar.
 
 ## Erzeugte EPUB-Struktur
 

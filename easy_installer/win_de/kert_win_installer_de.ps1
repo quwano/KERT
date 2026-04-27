@@ -28,6 +28,16 @@ function Ask-Continue {
         Show-Abort
         exit 1
     }
+    Write-Host ""
+
+    # --- pdfplumber Pillow (PDF-Verarbeitung) ---
+    Write-Host "[3/3] pdfplumber Pillow wird installiert..."
+    & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "pdfplumber", "Pillow"))
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "[Fertig] pdfplumber Pillow wurde erfolgreich installiert."
+    } else {
+        Write-Host "[Fehler] pdfplumber Pillow-Installation fehlgeschlagen." -ForegroundColor Red
+    }
 }
 
 function Show-Abort {
@@ -388,7 +398,7 @@ if ($null -eq $pyExe) {
 
     $pyArgs = $pyExe.Split()
 
-    Write-Host "[1/2] textgrid wird installiert..."
+    Write-Host "[1/3] textgrid wird installiert..."
     & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "textgrid"))
     if ($LASTEXITCODE -eq 0) {
         Write-Host "[Fertig] textgrid wurde erfolgreich installiert."
@@ -398,7 +408,7 @@ if ($null -eq $pyExe) {
 
     Write-Host ""
 
-    Write-Host "[2/2] saxonche wird installiert..."
+    Write-Host "[2/3] saxonche wird installiert..."
     $arch = $env:PROCESSOR_ARCHITECTURE
     if ($arch -eq "ARM64") {
         Write-Host ""
