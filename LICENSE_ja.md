@@ -47,6 +47,7 @@ KERT は以下のツール・ライブラリを使用しています。各ツー
 
 | ライブラリ | ライセンス | 用途 |
 |-----------|-----------|------|
+| [radicalchar](https://github.com/yamamaya/radicalchar) | The Unlicense | PDF テキスト抽出における CJK 部首補助文字や康煕部首文字の正規化 |
 | [textgrid](https://github.com/kylebgorman/textgrid) | MIT License | TextGrid ファイルの読み込み |
 | [saxonche](https://pypi.org/project/saxonche/) | MPL 2.0 | XSLT 3.0 プロセッサ |
 | [FFmpeg](https://ffmpeg.org/) | LGPL / GPL | WAV から MP3 への音声変換 |

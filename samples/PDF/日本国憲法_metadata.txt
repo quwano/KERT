@@ -1,0 +1,13 @@
+title: pdfからの変換テスト
+author: KERT テスト
+publisher: テスト出版
+subject: テスト
+rights: Copyright 2026 KERT
+subject:sample
+accessModeSufficient:textual
+accessibilitySummary:No special notes
+accessMode:textual
+accessibilityFeature:index
+accessibilityHazard:noFlashingHazard
+accessibilityHazard:noMotionSimulationHazard
+accessibilityHazard:noSoundHazard

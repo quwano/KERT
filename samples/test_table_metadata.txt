@@ -1,0 +1,5 @@
+title: 表テスト
+author: KERT テスト
+publisher: テスト出版
+subject: テスト
+rights: Copyright 2026 KERT

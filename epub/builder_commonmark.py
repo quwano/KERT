@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from core import logger
 from core.messages import msg
 from parsers.commonmark import Section, TableData
+from text.common import IMAGE_ONLY_PAT
 from epub.packaging import (
     create_epub_structure,
     write_css_file,
@@ -189,6 +190,10 @@ def build_section_xhtml_and_smil(
             smil_pars.extend(tbl_smil)
             if tbl_xhtml:
                 xhtml_paragraphs.append(tbl_xhtml)
+        elif isinstance(paragraph, str) and IMAGE_ONLY_PAT.match(paragraph):
+            # 画像のみの段落: SMILマッチングをバイパスして <figure> として出力
+            img_xhtml = escape_with_formatting(paragraph.strip())
+            xhtml_paragraphs.append(f'        <figure>{img_xhtml}</figure>')
         else:
             para_p, para_smil, span_id, tg_index = process_paragraph(
                 paragraph, tg_intervals, tg_index, span_id,
@@ -680,6 +685,10 @@ def build_commonmark_multi_epub(
                     smil_pars.extend(tbl_smil)
                     if tbl_xhtml:
                         xhtml_paragraphs.append(tbl_xhtml)
+                elif isinstance(paragraph, str) and IMAGE_ONLY_PAT.match(paragraph):
+                    # 画像のみの段落: SMILマッチングをバイパスして <figure> として出力
+                    img_xhtml = escape_with_formatting(paragraph.strip())
+                    xhtml_paragraphs.append(f'        <figure>{img_xhtml}</figure>')
                 else:
                     para_p, para_smil, span_id, tg_index = process_paragraph(
                         paragraph, tg_intervals, tg_index, span_id,

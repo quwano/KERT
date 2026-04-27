@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from text.common import READING_SUB_PATTERN, strip_formatting, TextNormalizer, strip_formatting_for_display
+from text.common import READING_SUB_PATTERN, strip_formatting, TextNormalizer, strip_formatting_for_display, IMAGE_ONLY_PAT
 from text.processing import escape_with_formatting
 
 
@@ -373,6 +373,9 @@ def generate_reading_text(sections: list[Section]) -> str:
                         r = _process_line_for_reading(cell.content)
                         if r.strip():
                             lines.append(r)
+            elif isinstance(para, str) and IMAGE_ONLY_PAT.match(para):
+                # 画像のみの段落は読み上げ対象外（SMILマッチングも行わない）
+                pass
             else:
                 para_reading = _process_line_for_reading(para)
                 if para_reading.strip():

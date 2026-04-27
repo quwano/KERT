@@ -41,6 +41,14 @@ th {
     font-weight: normal;
     background-color: #f0f0f0;
 }
+figure {
+    text-align: center;
+    margin: 1em 0;
+}
+figure img {
+    max-width: 100%;
+    height: auto;
+}
 """
 
 CONTAINER_XML = ('<?xml version="1.0" encoding="UTF-8"?>'

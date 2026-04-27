@@ -1,0 +1,13 @@
+title:Ist die Trägheit eines Körpers von seinem Energieinhalt abhängig?
+contributor:
+author:A. Einstein.
+publisher:
+rights:
+subject:sample
+accessModeSufficient:textual
+accessibilitySummary:No special notes
+accessMode:textual
+accessibilityFeature:index
+accessibilityHazard:noFlashingHazard
+accessibilityHazard:noMotionSimulationHazard
+accessibilityHazard:noSoundHazard
