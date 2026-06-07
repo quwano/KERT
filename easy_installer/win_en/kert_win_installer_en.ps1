@@ -28,16 +28,6 @@ function Ask-Continue {
         Show-Abort
         exit 1
     }
-    Write-Host ""
-
-    # --- pdfplumber Pillow (PDF processing) ---
-    Write-Host "[3/3] Installing pdfplumber Pillow..."
-    & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "pdfplumber", "Pillow"))
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "[Done] pdfplumber Pillow installation complete."
-    } else {
-        Write-Host "[Error] pdfplumber Pillow installation failed." -ForegroundColor Red
-    }
 }
 
 function Show-Abort {
@@ -381,19 +371,14 @@ Ask-Continue
 Write-Header "Step 6 / 7  :  Install textgrid / saxonche"
 
 $pyExe = $null
-if ($null -ne (Get-Command python -ErrorAction SilentlyContinue)) {
-    $testOut = & python --version 2>&1
-    if ($testOut -match "Python \d") { $pyExe = "python" }
-}
-if ($null -eq $pyExe -and $null -ne (Get-Command py -ErrorAction SilentlyContinue)) {
-    $testOut = & py -3 --version 2>&1
-    if ($testOut -match "Python \d") { $pyExe = "py -3" }
-}
+$testOut = & py -3.12 --version 2>&1
+if ($testOut -match "Python 3\.12") { $pyExe = "py -3.12" }
+
 if ($null -eq $pyExe) {
-    Write-Host "[Error] Python not found. Please check Step 1." -ForegroundColor Red
+    Write-Host "[Error] Python 3.12 not found. Please check Step 1." -ForegroundColor Red
     Write-Host ""
 } else {
-    Write-Host "Python in use: $pyExe ($( & $pyExe.Split()[0] $pyExe.Split()[1..99] --version 2>&1 ))"
+    Write-Host "Python in use: $pyExe ($testOut)"
     Write-Host ""
 
     $pyArgs = $pyExe.Split()
@@ -416,13 +401,22 @@ if ($null -eq $pyExe) {
         Write-Host "saxonche is not available for ARM64 Windows on PyPI."
         Write-Host ""
         Write-Host "[Workaround] If you need XML input support:"
-        Write-Host "  1. Download the x64 Python installer from:"
+        Write-Host "  1. Install 'Windows installer (64-bit)' from the official Python site"
+        Write-Host "     NOTE: There is also an ARM64 installer listed -- do NOT choose that one"
         Write-Host "     https://www.python.org/downloads/release/python-31210/"
-        Write-Host "     File: python-3.12.10-amd64.exe"
-        Write-Host "  2. After installation, run:"
-        Write-Host "     py -3.12-64 -m pip install saxonche"
+        Write-Host "     File: python-3.12.10-amd64.exe  (shown as 'Windows installer (64-bit)')"
+        Write-Host "  2. Run the following in Command Prompt to list all installed Pythons:"
+        Write-Host "     py -0p"
+        Write-Host "     -> Find the Python 3.12 entry whose path does NOT contain 'arm64'"
+        Write-Host "     e.g. C:\Users\<username>\AppData\Local\Programs\Python\Python312\python.exe"
+        Write-Host "  3. Run pip using the full path to that python.exe to install all packages:"
+        Write-Host "     <path from above>\python.exe -m pip install textgrid saxonche pdfplumber Pillow"
+        Write-Host "  4. Run main.py with the same python.exe:"
+        Write-Host "     <path from above>\python.exe main.py"
         Write-Host ""
         Write-Host "saxonche is not required for CommonMark (.md) input."
+        Write-Host ""
+        Read-Host "Press Enter to continue"
     } else {
         & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "saxonche"))
         if ($LASTEXITCODE -eq 0) {
@@ -431,6 +425,17 @@ if ($null -eq $pyExe) {
             Write-Host "[Error] saxonche installation failed." -ForegroundColor Red
             Write-Host "Please check your internet connection and Python version (3.8 or later required)."
         }
+    }
+
+    Write-Host ""
+
+    # --- pdfplumber / Pillow (PDF processing) ---
+    Write-Host "[3/3] Installing pdfplumber / Pillow..."
+    & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "pdfplumber", "Pillow"))
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "[Done] pdfplumber / Pillow installation complete."
+    } else {
+        Write-Host "[Error] pdfplumber / Pillow installation failed." -ForegroundColor Red
     }
 }
 
@@ -481,7 +486,7 @@ Write-Host "All installation steps have been completed."
 Write-Host ""
 Write-Host "[Next steps]"
 Write-Host "  1. Navigate to the KERT folder"
-Write-Host "  2. Run: python main.py"
+Write-Host "  2. Double-click start_kert.bat in the KERT folder to launch"
 Write-Host ""
 Write-Host "For more information, see README.md."
 Write-Host ""

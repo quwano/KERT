@@ -6,7 +6,6 @@ XSLT 3.0 プロセッサ（saxonche）を使用してXML変換を行います。
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from saxonche import PySaxonProcessor
 
 from text.common import TextNormalizer
 from core.config import PUNCTUATION_CHARS
@@ -127,6 +126,14 @@ def convert_xml_to_audio_txt(xml_path: str, output_path: str) -> None:
     sre_lang = math_proc.sre_lang if math_proc else "ja"
     xml_text = _replace_math_with_yomikae(xml_text, sre_lang)
 
+    try:
+        from saxonche import PySaxonProcessor
+    except ImportError:
+        raise ImportError(
+            "saxonche がインストールされていません。XML入力機能には saxonche が必要です。\n"
+            "インストール方法: pip install saxonche\n"
+            "ARM64環境では saxonche が利用できない場合があります。CommonMark（.md）入力のみ使用してください。"
+        )
     with PySaxonProcessor(license=False) as proc:
         xslt_proc = proc.new_xslt30_processor()
         executable = xslt_proc.compile_stylesheet(stylesheet_file=str(XSLT_AUDIO_TXT))
@@ -164,6 +171,14 @@ def get_sections_from_xml(xml_path: str) -> list[XmlSection]:
     if math_proc:
         xml_text = _add_sre_speech_to_math(xml_text, math_proc.sre_lang)
 
+    try:
+        from saxonche import PySaxonProcessor
+    except ImportError:
+        raise ImportError(
+            "saxonche がインストールされていません。XML入力機能には saxonche が必要です。\n"
+            "インストール方法: pip install saxonche\n"
+            "ARM64環境では saxonche が利用できない場合があります。CommonMark（.md）入力のみ使用してください。"
+        )
     with PySaxonProcessor(license=False) as proc:
         xslt_proc = proc.new_xslt30_processor()
 

@@ -28,16 +28,6 @@ function Ask-Continue {
         Show-Abort
         exit 1
     }
-    Write-Host ""
-
-    # --- pdfplumber Pillow（PDF処理用）---
-    Write-Host "[3/3] pdfplumber Pillow をインストールしています..."
-    & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "pdfplumber", "Pillow"))
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "[完了] pdfplumber Pillow のインストールが完了しました。"
-    } else {
-        Write-Host "[エラー] pdfplumber Pillow のインストールに失敗しました。" -ForegroundColor Red
-    }
 }
 
 function Show-Abort {
@@ -439,20 +429,14 @@ Write-Header "ステップ 8 / 9  :  textgrid / saxonche のインストール"
 
 # 使用する Python コマンドを決定
 $pyExe = $null
-if ($null -ne (Get-Command python -ErrorAction SilentlyContinue)) {
-    # Windows Store スタブ（引数なし起動でストアを開くだけのもの）を除外
-    $testOut = & python --version 2>&1
-    if ($testOut -match "Python \d") { $pyExe = "python" }
-}
-if ($null -eq $pyExe -and $null -ne (Get-Command py -ErrorAction SilentlyContinue)) {
-    $testOut = & py -3 --version 2>&1
-    if ($testOut -match "Python \d") { $pyExe = "py -3" }
-}
+$testOut = & py -3.12 --version 2>&1
+if ($testOut -match "Python 3\.12") { $pyExe = "py -3.12" }
+
 if ($null -eq $pyExe) {
-    Write-Host "[エラー] Python が見つかりません。ステップ 1 を確認してください。" -ForegroundColor Red
+    Write-Host "[エラー] Python 3.12 が見つかりません。ステップ 1 を確認してください。" -ForegroundColor Red
     Write-Host ""
 } else {
-    Write-Host "使用する Python: $pyExe ($( & $pyExe.Split()[0] $pyExe.Split()[1..99] --version 2>&1 ))"
+    Write-Host "使用する Python: $pyExe ($testOut)"
     Write-Host ""
 
     # --- textgrid（純 Python、全プラットフォーム対応）---
@@ -477,13 +461,22 @@ if ($null -eq $pyExe) {
         Write-Host "自動インストールできません。"
         Write-Host ""
         Write-Host "【回避策】XML 入力機能（.xml ファイルの処理）が必要な場合："
-        Write-Host "  1. Python 公式サイトから x64 版 Python をダウンロードしてインストール"
+        Write-Host "  1. Python 公式サイトから『Windows installer (64-bit)』をインストール"
+        Write-Host "     ※ 一覧に ARM64 版もあるが、そちらは選ばないこと"
         Write-Host "     https://www.python.org/downloads/release/python-31210/"
-        Write-Host "     ファイル: python-3.12.10-amd64.exe"
-        Write-Host "  2. インストール後、コマンドプロンプトで以下を実行:"
-        Write-Host "     py -3.12-64 -m pip install saxonche"
+        Write-Host "     ファイル: python-3.12.10-amd64.exe（ページ表示名: Windows installer (64-bit)）"
+        Write-Host "  2. コマンドプロンプトで以下を実行してインストール済み Python の一覧を確認:"
+        Write-Host "     py -0p"
+        Write-Host "     → パスに 'arm64' を含まない Python 3.12 の行を探す"
+        Write-Host "     例: C:\Users\<ユーザー名>\AppData\Local\Programs\Python\Python312\python.exe"
+        Write-Host "  3. その python.exe のフルパスで全パッケージを pip インストール:"
+        Write-Host "     <上で確認したパス>\python.exe -m pip install textgrid saxonche pdfplumber Pillow"
+        Write-Host "  4. 同じ python.exe で main.py を実行:"
+        Write-Host "     <上で確認したパス>\python.exe main.py"
         Write-Host ""
         Write-Host "CommonMark（.md）形式の入力のみ使用する場合は saxonche 不要です。"
+        Write-Host ""
+        Read-Host "Enterキーを押して続けます"
     } else {
         & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "saxonche"))
         if ($LASTEXITCODE -eq 0) {
@@ -492,6 +485,17 @@ if ($null -eq $pyExe) {
             Write-Host "[エラー] saxonche のインストールに失敗しました。" -ForegroundColor Red
             Write-Host "インターネット接続と Python のバージョン（3.8 以上）を確認してください。"
         }
+    }
+
+    Write-Host ""
+
+    # --- pdfplumber / Pillow（PDF処理用）---
+    Write-Host "[3/3] pdfplumber / Pillow をインストールしています..."
+    & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "pdfplumber", "Pillow"))
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "[完了] pdfplumber / Pillow のインストールが完了しました。"
+    } else {
+        Write-Host "[エラー] pdfplumber / Pillow のインストールに失敗しました。" -ForegroundColor Red
     }
 }
 
@@ -543,7 +547,7 @@ Write-Host ""
 Write-Host "【次のステップ】"
 Write-Host "  1. VOICEVOX を起動する（日本語使用時）"
 Write-Host "  2. KERT フォルダに移動する"
-Write-Host "  3. python main.py を実行する"
+Write-Host "  3. KERT フォルダ内の start_kert.bat をダブルクリックして起動する"
 Write-Host ""
 Write-Host "ご不明な点は README.md または README_ja.md をご参照ください。"
 Write-Host ""

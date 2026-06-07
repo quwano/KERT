@@ -11,14 +11,13 @@ import xml.etree.ElementTree as ET
 import bisect
 from functools import lru_cache
 from pathlib import Path
-from saxonche import PySaxonProcessor
 
 # XSLTファイルのパス
 _PROJECT_ROOT = Path(__file__).parent.parent
 _XSLT_READING = _PROJECT_ROOT / "resources" / "xhtml_to_reading_text.xsl"
 
 # モジュールレベルキャッシュ
-_proc: PySaxonProcessor | None = None
+_proc = None
 _reading_exec = None
 
 
@@ -26,6 +25,14 @@ def _get_reading_exec():
     """キャッシュ済み (PySaxonProcessor, XsltExecutable) を返す。"""
     global _proc, _reading_exec
     if _reading_exec is None:
+        try:
+            from saxonche import PySaxonProcessor
+        except ImportError:
+            raise ImportError(
+                "saxonche がインストールされていません。XML入力機能には saxonche が必要です。\n"
+                "インストール方法: pip install saxonche\n"
+                "ARM64環境では saxonche が利用できない場合があります。CommonMark（.md）入力のみ使用してください。"
+            )
         _proc = PySaxonProcessor(license=False)
         xslt_proc = _proc.new_xslt30_processor()
         _reading_exec = xslt_proc.compile_stylesheet(

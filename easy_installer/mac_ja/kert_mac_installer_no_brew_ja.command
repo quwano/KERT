@@ -455,7 +455,14 @@ else
     echo ""
 
     echo "[2/3] saxonche をインストールしています..."
-    if $PY_CMD -m pip install saxonche; then
+    if [ "$ARCH" = "arm64" ]; then
+        echo ""
+        echo -e "${YELLOW}[警告] Apple Silicon (ARM64) Mac が検出されました。${NC}"
+        echo "saxonche は現在 ARM64 macOS 向けパッケージが PyPI に存在しないため、"
+        echo "自動インストールできません。"
+        echo ""
+        echo "CommonMark（.md）形式の入力のみ使用する場合は saxonche 不要です。"
+    elif $PY_CMD -m pip install saxonche; then
         echo "[完了] saxonche のインストールが完了しました。"
     else
         echo -e "${RED}[エラー] saxonche のインストールに失敗しました。${NC}"
@@ -500,6 +507,12 @@ fi
 
 ask_continue
 
+# start_kert.command に実行権限を付与
+KERT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+if [ -f "$KERT_DIR/start_kert.command" ]; then
+    chmod +x "$KERT_DIR/start_kert.command"
+fi
+
 # ============================================================
 # 完了画面
 # ============================================================
@@ -514,8 +527,7 @@ echo ""
 echo "【次のステップ】"
 echo "  1. ターミナルを再起動する（PATH の変更を反映するため）"
 echo "  2. VOICEVOX を起動する（日本語使用時）"
-echo "  3. KERT フォルダに移動する"
-echo "  4. python3.12 main.py を実行する"
+echo "  3. KERT フォルダ内の start_kert.command をダブルクリックして起動する"
 echo ""
 echo "ご不明な点は README.md または README_ja.md をご参照ください。"
 echo ""

@@ -28,16 +28,6 @@ function Ask-Continue {
         Show-Abort
         exit 1
     }
-    Write-Host ""
-
-    # --- pdfplumber Pillow (PDF-Verarbeitung) ---
-    Write-Host "[3/3] pdfplumber Pillow wird installiert..."
-    & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "pdfplumber", "Pillow"))
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "[Fertig] pdfplumber Pillow wurde erfolgreich installiert."
-    } else {
-        Write-Host "[Fehler] pdfplumber Pillow-Installation fehlgeschlagen." -ForegroundColor Red
-    }
 }
 
 function Show-Abort {
@@ -381,19 +371,14 @@ Ask-Continue
 Write-Header "Schritt 6 / 7  :  textgrid / saxonche installieren"
 
 $pyExe = $null
-if ($null -ne (Get-Command python -ErrorAction SilentlyContinue)) {
-    $testOut = & python --version 2>&1
-    if ($testOut -match "Python \d") { $pyExe = "python" }
-}
-if ($null -eq $pyExe -and $null -ne (Get-Command py -ErrorAction SilentlyContinue)) {
-    $testOut = & py -3 --version 2>&1
-    if ($testOut -match "Python \d") { $pyExe = "py -3" }
-}
+$testOut = & py -3.12 --version 2>&1
+if ($testOut -match "Python 3\.12") { $pyExe = "py -3.12" }
+
 if ($null -eq $pyExe) {
-    Write-Host "[Fehler] Python nicht gefunden. Bitte Schritt 1 pruefen." -ForegroundColor Red
+    Write-Host "[Fehler] Python 3.12 nicht gefunden. Bitte Schritt 1 pruefen." -ForegroundColor Red
     Write-Host ""
 } else {
-    Write-Host "Verwendetes Python: $pyExe ($( & $pyExe.Split()[0] $pyExe.Split()[1..99] --version 2>&1 ))"
+    Write-Host "Verwendetes Python: $pyExe ($testOut)"
     Write-Host ""
 
     $pyArgs = $pyExe.Split()
@@ -416,13 +401,22 @@ if ($null -eq $pyExe) {
         Write-Host "saxonche ist fuer ARM64 Windows auf PyPI nicht verfuegbar."
         Write-Host ""
         Write-Host "[Workaround] Falls XML-Eingabe benoetigt wird:"
-        Write-Host "  1. x64-Python von der Python-Website herunterladen:"
+        Write-Host "  1. 'Windows installer (64-bit)' von der offiziellen Python-Website installieren"
+        Write-Host "     HINWEIS: Es gibt auch einen ARM64-Installer -- diesen NICHT auswaehlen"
         Write-Host "     https://www.python.org/downloads/release/python-31210/"
-        Write-Host "     Datei: python-3.12.10-amd64.exe"
-        Write-Host "  2. Nach der Installation ausfuehren:"
-        Write-Host "     py -3.12-64 -m pip install saxonche"
+        Write-Host "     Datei: python-3.12.10-amd64.exe  (Anzeigename: 'Windows installer (64-bit)')"
+        Write-Host "  2. Alle installierten Python-Versionen in der Eingabeaufforderung anzeigen:"
+        Write-Host "     py -0p"
+        Write-Host "     -> Python-3.12-Eintrag suchen, dessen Pfad KEIN 'arm64' enthaelt"
+        Write-Host "     z.B. C:\Users\<Benutzername>\AppData\Local\Programs\Python\Python312\python.exe"
+        Write-Host "  3. Alle Pakete ueber den vollstaendigen Pfad dieser python.exe installieren:"
+        Write-Host "     <obiger Pfad>\python.exe -m pip install textgrid saxonche pdfplumber Pillow"
+        Write-Host "  4. main.py mit derselben python.exe ausfuehren:"
+        Write-Host "     <obiger Pfad>\python.exe main.py"
         Write-Host ""
         Write-Host "saxonche ist fuer CommonMark (.md)-Eingabe nicht erforderlich."
+        Write-Host ""
+        Read-Host "Drücken Sie Enter zum Fortfahren"
     } else {
         & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "saxonche"))
         if ($LASTEXITCODE -eq 0) {
@@ -431,6 +425,17 @@ if ($null -eq $pyExe) {
             Write-Host "[Fehler] saxonche-Installation fehlgeschlagen." -ForegroundColor Red
             Write-Host "Bitte Internetverbindung und Python-Version (3.8 oder hoeher) pruefen."
         }
+    }
+
+    Write-Host ""
+
+    # --- pdfplumber / Pillow (PDF-Verarbeitung) ---
+    Write-Host "[3/3] pdfplumber / Pillow wird installiert..."
+    & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "pdfplumber", "Pillow"))
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "[Fertig] pdfplumber / Pillow wurde erfolgreich installiert."
+    } else {
+        Write-Host "[Fehler] pdfplumber / Pillow-Installation fehlgeschlagen." -ForegroundColor Red
     }
 }
 
@@ -481,7 +486,7 @@ Write-Host "Alle Installationsschritte wurden abgeschlossen."
 Write-Host ""
 Write-Host "[Naechste Schritte]"
 Write-Host "  1. Zum KERT-Ordner navigieren"
-Write-Host "  2. Ausfuehren: python main.py"
+Write-Host "  2. start_kert.bat im KERT-Ordner doppelklicken, um zu starten"
 Write-Host ""
 Write-Host "Weitere Informationen finden Sie in README.md."
 Write-Host ""

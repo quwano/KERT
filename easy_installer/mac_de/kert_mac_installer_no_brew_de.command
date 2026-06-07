@@ -386,7 +386,14 @@ else
     echo ""
 
     echo "[2/3] saxonche wird installiert..."
-    if $PY_CMD -m pip install saxonche; then
+    if [ "$ARCH" = "arm64" ]; then
+        echo ""
+        echo -e "${YELLOW}[Warnung] Apple Silicon (ARM64) Mac erkannt.${NC}"
+        echo "saxonche ist fuer ARM64 macOS auf PyPI nicht verfuegbar und kann"
+        echo "nicht automatisch installiert werden."
+        echo ""
+        echo "saxonche wird nicht benoetigt, wenn nur CommonMark (.md)-Eingabe verwendet wird."
+    elif $PY_CMD -m pip install saxonche; then
         echo "[Fertig] saxonche wurde erfolgreich installiert."
     else
         echo -e "${RED}[Fehler] saxonche-Installation fehlgeschlagen.${NC}"
@@ -431,6 +438,12 @@ fi
 
 ask_continue
 
+# Ausfuehrungsrecht fuer start_kert.command setzen
+KERT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+if [ -f "$KERT_DIR/start_kert.command" ]; then
+    chmod +x "$KERT_DIR/start_kert.command"
+fi
+
 # ============================================================
 # Abschlussbildschirm
 # ============================================================
@@ -444,8 +457,7 @@ echo "Alle Installationsschritte wurden abgeschlossen."
 echo ""
 echo "[Naechste Schritte]"
 echo "  1. Terminal neu starten (damit PATH-Aenderungen wirksam werden)"
-echo "  2. Zum KERT-Ordner navigieren"
-echo "  3. Ausfuehren: python3.12 main.py"
+echo "  2. start_kert.command im KERT-Ordner doppelklicken, um zu starten"
 echo ""
 echo "Weitere Informationen finden Sie in README.md."
 echo ""

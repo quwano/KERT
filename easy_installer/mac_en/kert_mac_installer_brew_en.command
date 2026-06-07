@@ -413,7 +413,14 @@ else
     echo ""
 
     echo "[2/2] Installing saxonche..."
-    if $PY_CMD -m pip install saxonche; then
+    if [ "$ARCH" = "arm64" ]; then
+        echo ""
+        echo -e "${YELLOW}[Warning] Apple Silicon (ARM64) Mac detected.${NC}"
+        echo "saxonche is not available for ARM64 macOS on PyPI and cannot be"
+        echo "installed automatically."
+        echo ""
+        echo "saxonche is not required if you only use CommonMark (.md) input."
+    elif $PY_CMD -m pip install saxonche; then
         echo "[Done] saxonche installation complete."
     else
         echo -e "${RED}[Error] saxonche installation failed.${NC}"
@@ -458,6 +465,12 @@ fi
 
 ask_continue
 
+# Set execute permission on start_kert.command
+KERT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+if [ -f "$KERT_DIR/start_kert.command" ]; then
+    chmod +x "$KERT_DIR/start_kert.command"
+fi
+
 # ============================================================
 # Completion screen
 # ============================================================
@@ -471,8 +484,7 @@ echo "All installation steps have been completed."
 echo ""
 echo "[Next steps]"
 echo "  1. Restart Terminal (to apply PATH changes)"
-echo "  2. Navigate to the KERT folder"
-echo "  3. Run: python3.12 main.py"
+echo "  2. Double-click start_kert.command in the KERT folder to launch"
 echo ""
 echo "For more information, see README.md."
 echo ""

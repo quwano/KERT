@@ -12,6 +12,13 @@ MESSAGES: dict[str, dict[str, str]] = {
         # ツールタイトル
         "tool_title": "KERT - EPUB3 & DAISY4 Support Tool",
 
+        # 起動時注意書き
+        "startup_notice": (
+            "[注意]\n"
+            "  ・日本語を処理する場合は、処理が完了するまで VOICEVOX を終了しないでください。\n"
+            "  ・処理には数分かかります。"
+        ),
+
         # 言語選択
         "select_language": "言語を選択してください / Select language:",
         "language_prompt": "言語 / Language (1-{n}, デフォルト: 1): ",
@@ -170,6 +177,13 @@ MESSAGES: dict[str, dict[str, str]] = {
     "en": {
         # Tool title
         "tool_title": "KERT - EPUB3 & DAISY4 Support Tool",
+
+        # Startup notice
+        "startup_notice": (
+            "[Notice]\n"
+            "  - If processing Japanese, do not quit VOICEVOX until processing is complete.\n"
+            "  - Processing may take several minutes."
+        ),
 
         # Language selection
         "select_language": "Select language:",

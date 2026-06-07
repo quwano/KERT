@@ -986,6 +986,8 @@ def main() -> None:
     logger.separator("=")
     print(msg("tool_title"))
     logger.separator("=")
+    print(msg("startup_notice"))
+    print()
 
     # 言語選択
     lang_config, lang_choice = _prompt_language()
