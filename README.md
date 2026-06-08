@@ -42,6 +42,90 @@ See **[`easy_installer/INSTALL_GUIDE.md`](./easy_installer/INSTALL_GUIDE.md)** t
 
 For manual installation, follow the steps in [Requirements](#requirements) below.
 
+## Usage
+
+### Running
+
+**Windows**: Double-click `start_kert.bat` in the KERT folder to launch.
+
+**macOS**: Double-click `start_kert.command` in the KERT folder to launch.
+
+To run from the command line:
+
+```bash
+# Windows
+py -3.12 main.py
+
+# macOS
+python3 main.py
+```
+
+> **ARM64 note**: On Windows ARM64 and macOS Apple Silicon, saxonche is unavailable, so **XML input is not supported**. CommonMark (.md/.txt) input works without any issues.
+
+You will be prompted interactively to select the following:
+
+1. **Language**: Japanese / English (US) / Deutsch
+2. **Input format**: CommonMark extended text file / XML file / **PDF file**
+3. **Processing mode**: Single file / Folder (multiple files) / *(PDF only)* Generate Markdown
+4. **(PDF only) Heading detection mode**: Layout-based / Legal language / Numbered & symbol
+5. **Input path**: File or folder path
+6. **Intermediate files**: Whether to keep them
+
+> **Tip**: Press **ESC** or **Ctrl+C** at any prompt to cancel and exit immediately.
+
+### Example Run
+
+For Japanese, CommonMark, single file:
+
+```
+> start_kert.bat   (Windows) or:  $ ./start_kert.command   (macOS)
+==================================================
+EPUB Generator
+==================================================
+[Notice]
+  - If processing Japanese, do not quit VOICEVOX until processing is complete.
+  - Processing may take several minutes.
+
+Select language:
+  1: Japanese (ja_JP)
+  2: English (US) (en_US)
+  3: Deutsch (de_DE)
+------
+Language (1-3, default: 1): 1
+------
+Select input format:
+  1: CommonMark extended text file (.txt/.md)
+  2: XML file (.xml)
+------
+Selection (1-2, default: 1): 1
+------
+Select processing mode:
+  1: Generate EPUB from a single CommonMark extended file
+  2: Generate EPUB from multiple CommonMark extended files in a folder
+------
+Selection (1-2, default: 1): 1
+------
+Specify the path to the CommonMark extended file (.txt/.md)
+/path/to/mybook.txt
+------
+Keep intermediate files (META-INF, OEBPS, audio.*)?
+  1: Do not keep (default)
+  2: Keep
+------
+Selection (1-2, default: 1): 1
+```
+
+### Output Files
+
+The generated EPUB file is output to the same directory as the input file.
+
+Filename format: `{input_filename}_{mode_number}_{timestamp}.epub`
+
+- Mode number: A concatenation of the selected language, format, and processing mode numbers (e.g., `111`)
+- Timestamp: `YYYYMMDDHHmmss` format
+
+Example: `mybook_111_20250219143000.epub`
+
 ## Requirements
 
 ### Python
@@ -477,73 +561,25 @@ chapters/
 - For XML, `.xml` files are collected.
 - Place the `_metadata.txt` for folders in the parent directory.
 
-## Usage
+## Customization
 
-### Running
+### Character Reading Map (`resources/reading_map.json`)
 
-```bash
-python main.py
+Defines how special characters are converted for TTS/MFA audio alignment. Built-in mappings cover circle numbers (①②…), Roman numerals (Ⅰ Ⅱ…), and common brackets. You can add or override entries by editing `resources/reading_map.json`:
+
+```json
+{
+  "〔": "",
+  "〕": "",
+  "①": "いち"
+}
 ```
 
-You will be prompted interactively to select the following:
+Set a character to `""` to remove it from the reading text (useful for characters MFA cannot handle). Set it to a reading string to override the built-in reading.
 
-1. **Language**: Japanese / English (US) / Deutsch
-2. **Input format**: CommonMark extended text file / XML file / **PDF file**
-3. **Processing mode**: Single file / Folder (multiple files) / *(PDF only)* Generate Markdown
-4. **(PDF only) Heading detection mode**: Layout-based / Legal language / Numbered & symbol
-5. **Input path**: File or folder path
-6. **Intermediate files**: Whether to keep them
+### PDF Heading Patterns (`resources/pdf_heading_patterns.json`)
 
-> **Tip**: Press **ESC** or **Ctrl+C** at any prompt to cancel and exit immediately.
-
-### Example Run
-
-For Japanese, CommonMark, single file:
-
-```
-$ python main.py
-==================================================
-EPUB Generator
-==================================================
-Select language:
-  1: Japanese (ja_JP)
-  2: English (US) (en_US)
-  3: Deutsch (de_DE)
-------
-Language (1-3, default: 1): 1
-------
-Select input format:
-  1: CommonMark extended text file (.txt/.md)
-  2: XML file (.xml)
-------
-Selection (1-2, default: 1): 1
-------
-Select processing mode:
-  1: Generate EPUB from a single CommonMark extended file
-  2: Generate EPUB from multiple CommonMark extended files in a folder
-------
-Selection (1-2, default: 1): 1
-------
-Specify the path to the CommonMark extended file (.txt/.md)
-/path/to/mybook.txt
-------
-Keep intermediate files (META-INF, OEBPS, audio.*)?
-  1: Do not keep (default)
-  2: Keep
-------
-Selection (1-2, default: 1): 1
-```
-
-### Output Files
-
-The generated EPUB file is output to the same directory as the input file.
-
-Filename format: `{input_filename}_{mode_number}_{timestamp}.epub`
-
-- Mode number: A concatenation of the selected language, format, and processing mode numbers (e.g., `111`)
-- Timestamp: `YYYYMMDDHHmmss` format
-
-Example: `mybook_111_20250219143000.epub`
+Defines regex patterns for each PDF heading detection mode (layout-based, legal, numbered/symbol). Edit this file to add or remove patterns to suit your document type. The visual mode thresholds (font size ratio, score thresholds) are also configurable here.
 
 ### Intermediate Files
 
@@ -570,26 +606,6 @@ If you select "Keep intermediate files", the following are saved in the `interme
 | `OEBPS/` | EPUB content |
 
 You can debug formatting conversion results and span splitting by inspecting the intermediate XHTML files.
-
-## Customization
-
-### Character Reading Map (`resources/reading_map.json`)
-
-Defines how special characters are converted for TTS/MFA audio alignment. Built-in mappings cover circle numbers (①②…), Roman numerals (Ⅰ Ⅱ…), and common brackets. You can add or override entries by editing `resources/reading_map.json`:
-
-```json
-{
-  "〔": "",
-  "〕": "",
-  "①": "いち"
-}
-```
-
-Set a character to `""` to remove it from the reading text (useful for characters MFA cannot handle). Set it to a reading string to override the built-in reading.
-
-### PDF Heading Patterns (`resources/pdf_heading_patterns.json`)
-
-Defines regex patterns for each PDF heading detection mode (layout-based, legal, numbered/symbol). Edit this file to add or remove patterns to suit your document type. The visual mode thresholds (font size ratio, score thresholds) are also configurable here.
 
 ## Generated EPUB Structure
 

@@ -42,6 +42,90 @@ Welcher Installer für Ihr Betriebssystem und Ihre Sprache geeignet ist, erfahre
 
 Für die manuelle Installation folgen Sie den Schritten unter [Voraussetzungen](#voraussetzungen).
 
+## Verwendung
+
+### Ausführen
+
+**Windows**: Doppelklicken Sie auf `start_kert.bat` im KERT-Ordner, um die Anwendung zu starten.
+
+**macOS**: Doppelklicken Sie auf `start_kert.command` im KERT-Ordner, um die Anwendung zu starten.
+
+Ausführen über die Befehlszeile:
+
+```bash
+# Windows
+py -3.12 main.py
+
+# macOS
+python3 main.py
+```
+
+> **Hinweis für ARM64**: Unter Windows ARM64 und macOS Apple Silicon ist saxonche nicht verfügbar, daher wird **XML-Eingabe nicht unterstützt**. CommonMark (.md/.txt)-Eingabe funktioniert ohne Einschränkungen.
+
+Sie werden interaktiv aufgefordert, Folgendes auszuwählen:
+
+1. **Sprache**: Japanisch / Englisch (US) / Deutsch
+2. **Eingabeformat**: Erweiterte CommonMark-Textdatei / XML-Datei / **PDF-Datei**
+3. **Verarbeitungsmodus**: Einzeldatei / Ordner (mehrere Dateien) / *(nur PDF)* Markdown erzeugen
+4. **(nur PDF) Überschriften-Erkennungsmodus**: Layout-basiert / Rechtliche Sprache / Nummeriert & Symbol
+5. **Eingabepfad**: Datei- oder Ordnerpfad
+6. **Zwischendateien**: Ob diese behalten werden sollen
+
+> **Tipp**: Drücken Sie **ESC** oder **Ctrl+C** an jeder Eingabeaufforderung, um den Vorgang sofort abzubrechen und zu beenden.
+
+### Ausführungsbeispiel
+
+Für Deutsch, CommonMark, Einzeldatei:
+
+```
+> start_kert.bat   (Windows) oder:  $ ./start_kert.command   (macOS)
+==================================================
+EPUB Generator
+==================================================
+[Notice]
+  - If processing Japanese, do not quit VOICEVOX until processing is complete.
+  - Processing may take several minutes.
+
+Select language:
+  1: Japanese (ja_JP)
+  2: English (US) (en_US)
+  3: Deutsch (de_DE)
+------
+Language (1-3, default: 1): 3
+------
+Select input format:
+  1: CommonMark extended text file (.txt/.md)
+  2: XML file (.xml)
+------
+Selection (1-2, default: 1): 1
+------
+Select processing mode:
+  1: Generate EPUB from a single CommonMark extended file
+  2: Generate EPUB from multiple CommonMark extended files in a folder
+------
+Selection (1-2, default: 1): 1
+------
+Specify the path to the CommonMark extended file (.txt/.md)
+/path/to/mybook.txt
+------
+Keep intermediate files (META-INF, OEBPS, audio.*)?
+  1: Do not keep (default)
+  2: Keep
+------
+Selection (1-2, default: 1): 1
+```
+
+### Ausgabedateien
+
+Die erzeugte EPUB-Datei wird im selben Verzeichnis wie die Eingabedatei ausgegeben.
+
+Dateinamenformat: `{Eingabedateiname}_{Modusnummer}_{Zeitstempel}.epub`
+
+- Modusnummer: Eine Verkettung der ausgewählten Sprach-, Format- und Verarbeitungsmodusnummern (z. B. `311`)
+- Zeitstempel: Format `YYYYMMDDHHmmss`
+
+Beispiel: `mybook_311_20250219143000.epub`
+
 ## Voraussetzungen
 
 ### Python
@@ -477,73 +561,25 @@ chapters/
 - Bei XML werden `.xml`-Dateien gesammelt.
 - Platzieren Sie die `_metadata.txt` für Ordner im übergeordneten Verzeichnis.
 
-## Verwendung
+## Anpassung
 
-### Ausführen
+### Lesekarte für Zeichen (`resources/reading_map.json`)
 
-```bash
-python main.py
+Definiert, wie Sonderzeichen für TTS/MFA-Audioausrichtung konvertiert werden. Die integrierte Karte enthält Kreiszahlen (①②…), römische Ziffern (Ⅰ Ⅱ…) und gängige Klammern. Durch Bearbeitung von `resources/reading_map.json` können Einträge hinzugefügt oder überschrieben werden:
+
+```json
+{
+  "〔": "",
+  "〕": "",
+  "①": "いち"
+}
 ```
 
-Sie werden interaktiv aufgefordert, Folgendes auszuwählen:
+`""` bedeutet, das Zeichen aus dem Vorlesetext zu entfernen (nützlich für Zeichen, die MFA nicht verarbeiten kann). Ein Zeichenkettenwert überschreibt die eingebaute Lesung.
 
-1. **Sprache**: Japanisch / Englisch (US) / Deutsch
-2. **Eingabeformat**: Erweiterte CommonMark-Textdatei / XML-Datei / **PDF-Datei**
-3. **Verarbeitungsmodus**: Einzeldatei / Ordner (mehrere Dateien) / *(nur PDF)* Markdown erzeugen
-4. **(nur PDF) Überschriften-Erkennungsmodus**: Layout-basiert / Rechtliche Sprache / Nummeriert & Symbol
-5. **Eingabepfad**: Datei- oder Ordnerpfad
-6. **Zwischendateien**: Ob diese behalten werden sollen
+### PDF-Überschriftenmuster (`resources/pdf_heading_patterns.json`)
 
-> **Tipp**: Drücken Sie **ESC** oder **Ctrl+C** an jeder Eingabeaufforderung, um den Vorgang sofort abzubrechen und zu beenden.
-
-### Ausführungsbeispiel
-
-Für Deutsch, CommonMark, Einzeldatei:
-
-```
-$ python main.py
-==================================================
-EPUB Generator
-==================================================
-Select language:
-  1: Japanese (ja_JP)
-  2: English (US) (en_US)
-  3: Deutsch (de_DE)
-------
-Language (1-3, default: 1): 3
-------
-Select input format:
-  1: CommonMark extended text file (.txt/.md)
-  2: XML file (.xml)
-------
-Selection (1-2, default: 1): 1
-------
-Select processing mode:
-  1: Generate EPUB from a single CommonMark extended file
-  2: Generate EPUB from multiple CommonMark extended files in a folder
-------
-Selection (1-2, default: 1): 1
-------
-Specify the path to the CommonMark extended file (.txt/.md)
-/path/to/mybook.txt
-------
-Keep intermediate files (META-INF, OEBPS, audio.*)?
-  1: Do not keep (default)
-  2: Keep
-------
-Selection (1-2, default: 1): 1
-```
-
-### Ausgabedateien
-
-Die erzeugte EPUB-Datei wird im selben Verzeichnis wie die Eingabedatei ausgegeben.
-
-Dateinamenformat: `{Eingabedateiname}_{Modusnummer}_{Zeitstempel}.epub`
-
-- Modusnummer: Eine Verkettung der ausgewählten Sprach-, Format- und Verarbeitungsmodusnummern (z. B. `311`)
-- Zeitstempel: Format `YYYYMMDDHHmmss`
-
-Beispiel: `mybook_311_20250219143000.epub`
+Definiert reguläre Ausdrücke für jeden PDF-Überschriften-Erkennungsmodus. Bearbeiten Sie diese Datei, um Muster je nach Dokumenttyp anzupassen. Die Schwellenwerte des Layout-Modus (Schriftgrößenverhältnis, Score-Grenzen) sind ebenfalls konfigurierbar.
 
 ### Zwischendateien
 
@@ -570,26 +606,6 @@ Wenn Sie „Zwischendateien behalten" wählen, werden folgende Dateien im Verzei
 | `OEBPS/` | EPUB-Inhalt |
 
 Sie können Formatierungskonvertierungsergebnisse und Span-Aufteilung durch Prüfen der XHTML-Zwischendateien debuggen.
-
-## Anpassung
-
-### Lesekarte für Zeichen (`resources/reading_map.json`)
-
-Definiert, wie Sonderzeichen für TTS/MFA-Audioausrichtung konvertiert werden. Die integrierte Karte enthält Kreiszahlen (①②…), römische Ziffern (Ⅰ Ⅱ…) und gängige Klammern. Durch Bearbeitung von `resources/reading_map.json` können Einträge hinzugefügt oder überschrieben werden:
-
-```json
-{
-  "〔": "",
-  "〕": "",
-  "①": "いち"
-}
-```
-
-`""` bedeutet, das Zeichen aus dem Vorlesetext zu entfernen (nützlich für Zeichen, die MFA nicht verarbeiten kann). Ein Zeichenkettenwert überschreibt die eingebaute Lesung.
-
-### PDF-Überschriftenmuster (`resources/pdf_heading_patterns.json`)
-
-Definiert reguläre Ausdrücke für jeden PDF-Überschriften-Erkennungsmodus. Bearbeiten Sie diese Datei, um Muster je nach Dokumenttyp anzupassen. Die Schwellenwerte des Layout-Modus (Schriftgrößenverhältnis, Score-Grenzen) sind ebenfalls konfigurierbar.
 
 ## Erzeugte EPUB-Struktur
 
