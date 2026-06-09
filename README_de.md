@@ -50,7 +50,28 @@ Für die manuelle Installation folgen Sie den Schritten unter [Voraussetzungen](
 
 **macOS**: Doppelklicken Sie auf `start_kert.command` im KERT-Ordner, um die Anwendung zu starten.
 
-Ausführen über die Befehlszeile:
+Das folgende Fenster wird angezeigt:
+
+![KERT GUI-Screenshot](docs/images/GUI.png)
+
+Konfigurieren Sie die Einstellungen der Reihe nach und klicken Sie auf die Schaltfläche „実行 / Run".
+
+1. **Sprache**: Japanisch / English (US) / Deutsch auswählen
+2. **Eingabeformat**: CommonMark (.txt/.md) / XML / PDF auswählen
+3. **Verarbeitungsmodus**: Einzeldatei / Ordner / PDF → nur MD auswählen
+4. **(nur PDF) Überschriftenerkennung**: Layout-basiert / Rechtliche Sprache / Nummeriert & Symbol auswählen
+5. **Pfad**: Pfad zur Eingabedatei oder zum Ordner eingeben (auch „参照... / Browse..."-Schaltfläche oder Drag & Drop ins Fenster möglich)
+6. **Zwischendateien**: „中間ファイルを残す / Keep intermediate files" aktivieren, um Dateien nach der Verarbeitung zu behalten
+
+Der Fortschritt wird während der Verarbeitung im Protokollbereich unten im Fenster angezeigt. Nach Abschluss erscheint ein Dialog.
+
+### Beenden
+
+Schließen Sie das Fenster, wenn die Verarbeitung abgeschlossen ist (Schließen-Schaltfläche in der Titelleiste oder Cmd+Q auf macOS).
+
+> **Hinweis**: Das Schließen des Fensters während der Verarbeitung unterbricht diese sofort. Teilweise erzeugte EPUB-Dateien können verbleiben.
+
+Ausführen über die Befehlszeile (für Fortgeschrittene):
 
 ```bash
 # Windows
@@ -58,61 +79,6 @@ py -3.12 main.py
 
 # macOS
 python3 main.py
-```
-
-> **Hinweis für ARM64**: Unter Windows ARM64 und macOS Apple Silicon ist saxonche nicht verfügbar, daher wird **XML-Eingabe nicht unterstützt**. CommonMark (.md/.txt)-Eingabe funktioniert ohne Einschränkungen.
-
-Sie werden interaktiv aufgefordert, Folgendes auszuwählen:
-
-1. **Sprache**: Japanisch / Englisch (US) / Deutsch
-2. **Eingabeformat**: Erweiterte CommonMark-Textdatei / XML-Datei / **PDF-Datei**
-3. **Verarbeitungsmodus**: Einzeldatei / Ordner (mehrere Dateien) / *(nur PDF)* Markdown erzeugen
-4. **(nur PDF) Überschriften-Erkennungsmodus**: Layout-basiert / Rechtliche Sprache / Nummeriert & Symbol
-5. **Eingabepfad**: Datei- oder Ordnerpfad
-6. **Zwischendateien**: Ob diese behalten werden sollen
-
-> **Tipp**: Drücken Sie **ESC** oder **Ctrl+C** an jeder Eingabeaufforderung, um den Vorgang sofort abzubrechen und zu beenden.
-
-### Ausführungsbeispiel
-
-Für Deutsch, CommonMark, Einzeldatei:
-
-```
-> start_kert.bat   (Windows) oder:  $ ./start_kert.command   (macOS)
-==================================================
-EPUB Generator
-==================================================
-[Notice]
-  - If processing Japanese, do not quit VOICEVOX until processing is complete.
-  - Processing may take several minutes.
-
-Select language:
-  1: Japanese (ja_JP)
-  2: English (US) (en_US)
-  3: Deutsch (de_DE)
-------
-Language (1-3, default: 1): 3
-------
-Select input format:
-  1: CommonMark extended text file (.txt/.md)
-  2: XML file (.xml)
-------
-Selection (1-2, default: 1): 1
-------
-Select processing mode:
-  1: Generate EPUB from a single CommonMark extended file
-  2: Generate EPUB from multiple CommonMark extended files in a folder
-------
-Selection (1-2, default: 1): 1
-------
-Specify the path to the CommonMark extended file (.txt/.md)
-/path/to/mybook.txt
-------
-Keep intermediate files (META-INF, OEBPS, audio.*)?
-  1: Do not keep (default)
-  2: Keep
-------
-Selection (1-2, default: 1): 1
 ```
 
 ### Ausgabedateien
@@ -126,191 +92,9 @@ Dateinamenformat: `{Eingabedateiname}_{Modusnummer}_{Zeitstempel}.epub`
 
 Beispiel: `mybook_311_20250219143000.epub`
 
-## Voraussetzungen
-
-### Python
-
-Python 3.12 oder höher ist erforderlich (aufgrund der Verwendung der Typhinweis-Syntax `X | None`).
-
-### Conda / Montreal Forced Aligner (MFA)
-
-[Montreal Forced Aligner (MFA)](https://montreal-forced-aligner.readthedocs.io/) wird für die Audio-Text-Ausrichtung verwendet (Analyse, welche Wörter welchen Positionen im Audio entsprechen).
-
-#### Conda installieren
-
-Conda wird als Laufzeitumgebung für MFA benötigt. Installieren Sie [Miniforge](https://github.com/conda-forge/miniforge) oder [Miniconda](https://docs.anaconda.com/free/miniconda/).
-
-> **Hinweis für Windows**: KERT erkennt die conda-Programmdatei automatisch (sucht in PATH, der Umgebungsvariable `CONDA_EXE` und gängigen Installationspfaden wie `%USERPROFILE%\miniforge3`). Falls die automatische Erkennung fehlschlägt, fügen Sie das Verzeichnis `Scripts` von Conda zum System-PATH hinzu oder setzen Sie die Umgebungsvariable `CONDA_EXE` auf den vollständigen Pfad von conda.exe.
-
-#### MFA installieren
-
-MFA wird in einer Conda-Umgebung installiert. Der Standardname der Umgebung ist `mfa`.
-
-```bash
-# Conda-Umgebung erstellen und MFA installieren
-conda create -n mfa -c conda-forge montreal-forced-aligner
-conda activate mfa
-```
-
-Nach der Installation von MFA laden Sie die Wörterbuch- und akustischen Modelle für die gewünschten Sprachen herunter (siehe „[MFA-Modelle installieren](#mfa-modelle-installieren)" für Details).
-
-> **Hinweis**: Während der KERT-Ausführung wird MFA automatisch über `conda run -n mfa` aufgerufen. Sie müssen `conda activate mfa` nicht vorher ausführen.
-
-#### Zusätzliches Setup für Japanisch
-
-Das japanische MFA-Modell (`japanese_mfa`) verwendet intern spacy / sudachipy. Nach der Installation von MFA installieren Sie die zusätzlichen Pakete mit den folgenden Befehlen:
-
-```bash
-conda activate mfa
-pip install spacy sudachipy sudachidict_core
-```
-
-### VOICEVOX (nur Japanisch)
-
-[VOICEVOX](https://voicevox.hiroshiba.jp/) wird für die japanische Sprachsynthese verwendet.
-
-- Starten Sie die VOICEVOX-Engine, bevor Sie KERT ausführen.
-- Die Standard-Verbindungs-URL ist `http://localhost:50021`.
-- Die Standardstimme ist ID 109 (Tohoku Itako).
-
-VOICEVOX ist nicht erforderlich, wenn Sie nur Englisch oder Deutsch verwenden.
-
-> **Wichtig: VOICEVOX-Nutzungsbedingungen**
->
-> Wenn Sie EPUBs mit von VOICEVOX erzeugtem Audio verteilen oder veröffentlichen, müssen Sie die VOICEVOX-[Nutzungsbedingungen](https://voicevox.hiroshiba.jp/term/) und die individuellen Charakter-Nutzungsbedingungen prüfen. Für einige Charaktere gelten Einschränkungen für die kommerzielle Nutzung oder es ist eine Namensnennung erforderlich. Die Standardstimme in KERT ist „Tohoku Itako" (ID 109).
-
-### macOS say / Windows SAPI (Englisch & Deutsch)
-
-Für die englische und deutsche Sprachsynthese wird die im Betriebssystem integrierte TTS verwendet.
-
-- **macOS**: `say`-Befehl (Englisch: Samantha, Deutsch: Anna)
-- **Windows**: Verwendet System.Speech.Synthesis (SAPI) über PowerShell. Fällt automatisch von macOS say mit denselben Spracheinstellungen zurück.
-
-> **Hinweis für Windows**: Das Sprachpaket für die Zielsprache muss vorab installiert werden. Gehen Sie zu **Windows-Einstellungen > Zeit & Sprache > Sprache**, fügen Sie Englisch oder Deutsch hinzu und stellen Sie sicher, dass **Spracheingabe** aktiviert ist.
-
-### FFmpeg
-
-[FFmpeg](https://ffmpeg.org/) wird verwendet, um WAV-Dateien, die von TTS erzeugt wurden, in MP3 umzuwandeln.
-
-```bash
-# macOS (Homebrew)
-brew install ffmpeg
-
-# Windows (Chocolatey)
-choco install ffmpeg
-```
-
-Stellen Sie sicher, dass der Befehl `ffmpeg` in Ihrem PATH verfügbar ist.
-
-### pip-Pakete
-
-```bash
-pip install -r requirements.txt
-```
-
-Installierte Pakete:
-
-| Paket | Zweck |
-|-------|-------|
-| `textgrid` | Lesen von TextGrid-Dateien, die von MFA erzeugt wurden |
-| `saxonche` | XSLT 3.0-Prozessor |
-| `pdfplumber` | PDF-Text- und Bildextraktion |
-| `Pillow` | Speichern von PDF-Abbildungen als Bilddateien |
-
-saxonche wird für die XML-Eingabekonvertierung verwendet. Bei ausschließlicher Verwendung von CommonMark- oder PDF-Eingaben ist es nicht erforderlich.
-pdfplumber und Pillow werden für die PDF-Eingabe benötigt. Pillow ist nur erforderlich, wenn Abbildungen aus PDFs extrahiert werden sollen.
-
-### Unterstützung für mathematische Formeln (Optional)
-
-Mathematische Formeln in TeX-Notation (`$...$`, `$$...$$`) in CommonMark-Dateien und MathML (`<math>`) in XML-Dateien werden unterstützt. Die folgenden Werkzeuge sind erforderlich, um diese Funktion zu aktivieren.
-
-| Werkzeug | Zweck | Installation |
-|----------|-------|-------------|
-| [pandoc](https://pandoc.org/) | TeX → MathML-Konvertierung | `brew install pandoc` / [pandoc.org](https://pandoc.org/installing.html) |
-| [Node.js](https://nodejs.org/) | Laufzeit für speech-rule-engine | `brew install node` / [nodejs.org](https://nodejs.org/) |
-| [speech-rule-engine](https://github.com/zorkow/speech-rule-engine) | MathML → Sprachtext | Siehe unten |
-
-#### Unterstützte Sprachen für mathematische Sprachausgabe
-
-Die **Anzeige** mathematischer Formeln (MathML im EPUB) funktioniert unabhängig von der Sprache. Die **Sprachausgabe** (Vorlesen von Formeln während der Wiedergabe) erfordert jedoch, dass sowohl speech-rule-engine als auch MFA die Sprache unterstützen.
-
-Unterstützte Sprachen finden Sie auf [speechruleengine.org](https://speechruleengine.org/).
-
-| KERT-Sprache | Formelanzeige | Formelausgabe |
-|--------------|--------------|---------------|
-| Japanisch (ja_JP) | ✓ | ✗ Nicht verfügbar (Stand März 2026, SRE unterstützt kein Japanisch) |
-| Englisch (en_US)  | ✓ | ✓ |
-| Deutsch (de_DE)   | ✓ | ✓ |
-
-Bei japanischer Eingabe erscheinen mathematische Formeln als MathML im EPUB, werden jedoch nicht korrekt vorgelesen. Der umgebende Text wird normal verarbeitet.
-
-#### speech-rule-engine installieren
-
-speech-rule-engine muss lokal im **KERT-Projektstammverzeichnis** installiert werden.
-
-> **Wichtig**: Führen Sie `npm install` aus dem **KERT-Projektstammverzeichnis** aus. Die Installation in einem anderen Verzeichnis wird von KERT nicht erkannt, obwohl npm keinen Fehler meldet.
-
-```bash
-cd /path/to/KERT   # Zum KERT-Projektstammverzeichnis wechseln
-npm install speech-rule-engine
-```
-
-Wenn eines dieser Werkzeuge fehlt, wenn mathematische Formeln in der Eingabedatei erkannt werden, zeigt KERT eine Warnung an und fordert Sie auf, abzubrechen oder ohne Formelunterstützung fortzufahren.
-
-## Mehrsprachige Unterstützung
-
-### Unterstützte Sprachen
-
-| Sprachcode | Sprache | TTS-Engine | MFA-Wörterbuch / Akustisches Modell |
-|------------|---------|------------|-------------------------------------|
-| `ja_JP` | Japanisch | VOICEVOX | `japanese_mfa` |
-| `en_US` | Englisch (US) | macOS say (Samantha) / Windows SAPI | `english_us_arpa` |
-| `de_DE` | Deutsch | macOS say (Anna) / Windows SAPI | `german_mfa` |
-
-### MFA-Modelle installieren
-
-Laden Sie die Wörterbuch- und akustischen Modelle für die Sprachen herunter, die Sie verwenden möchten.
-
-```bash
-# Japanisch
-conda run -n mfa mfa model download dictionary japanese_mfa
-conda run -n mfa mfa model download acoustic japanese_mfa
-
-# Englisch (US)
-conda run -n mfa mfa model download dictionary english_us_arpa
-conda run -n mfa mfa model download acoustic english_us_arpa
-
-# Deutsch
-conda run -n mfa mfa model download dictionary german_mfa
-conda run -n mfa mfa model download acoustic german_mfa
-```
-
-### Neue Sprachen hinzufügen
-
-Über die drei aufgeführten Sprachen hinaus können weitere Sprachen unterstützt werden. Führen Sie dazu folgende Schritte aus:
-
-1. **MFA-Modelle vorbereiten**: Installieren Sie die Wörterbuch- und akustischen Modelle für die Zielsprache. Verfügbare Modelle finden Sie in der [MFA-Dokumentation](https://mfa-models.readthedocs.io/).
-
-2. **Eintrag zu `LANGUAGE_CONFIGS` in `core/config.py` hinzufügen**: Verwenden Sie folgendes Format:
-
-```python
-"fr_FR": LanguageConfig(
-    code="fr_FR",
-    display_name="Fran\u00e7ais",
-    epub_lang="fr",
-    mfa_dictionary="french_mfa",      # MFA-Wörterbuchmodellname
-    mfa_acoustic="french_mfa",        # MFA-akustischer Modellname
-    tts_engine="say",                  # "voicevox" oder "say"
-    tts_voice="Thomas",               # macOS say-Stimmenname (bei Verwendung von say)
-),
-```
-
-- `tts_engine`: Verwenden Sie `"voicevox"` für Japanisch, `"say"` für andere Sprachen. Unter Windows wird bei Angabe von `"say"` automatisch auf SAPI zurückgefallen.
-- `tts_voice`: Der Stimmenname für macOS say. Führen Sie `say -v '?'` aus, um verfügbare Stimmen aufzulisten.
-
 ## Dokumente erstellen
 
-KERT unterstützt zwei Eingabeformate: **erweiterte CommonMark-Notation** und **XML-Format**.
+KERT unterstützt drei Eingabeformate: **erweiterte CommonMark-Notation**, **XML-Format** und **PDF-Format**. Für alle Eingabeformate ist eine [Metadatendatei (metadata.txt)](#metadatendatei-metadatatxt) erforderlich.
 
 ### Erweiterte CommonMark-Notation
 
@@ -560,6 +344,190 @@ chapters/
 - Bei CommonMark werden sowohl `.txt`- als auch `.md`-Dateien gesammelt.
 - Bei XML werden `.xml`-Dateien gesammelt.
 - Platzieren Sie die `_metadata.txt` für Ordner im übergeordneten Verzeichnis.
+
+## Voraussetzungen
+
+> **Bei Verwendung der Schnellinstallation**: Wenn Sie das Setup mit den Installationsskripten in `easy_installer/` durchgeführt haben, wurden **alle Schritte in diesem Abschnitt bereits erledigt – mit Ausnahme der Formelunterstützung**. Fügen Sie nur bei Bedarf die Formelunterstützung (optional) hinzu.
+
+### Python
+
+Python 3.12 oder höher ist erforderlich (aufgrund der Verwendung der Typhinweis-Syntax `X | None`).
+
+### Conda / Montreal Forced Aligner (MFA)
+
+[Montreal Forced Aligner (MFA)](https://montreal-forced-aligner.readthedocs.io/) wird für die Audio-Text-Ausrichtung verwendet (Analyse, welche Wörter welchen Positionen im Audio entsprechen).
+
+#### Conda installieren
+
+Conda wird als Laufzeitumgebung für MFA benötigt. Installieren Sie [Miniforge](https://github.com/conda-forge/miniforge) oder [Miniconda](https://docs.anaconda.com/free/miniconda/).
+
+> **Hinweis für Windows**: KERT erkennt die conda-Programmdatei automatisch (sucht in PATH, der Umgebungsvariable `CONDA_EXE` und gängigen Installationspfaden wie `%USERPROFILE%\miniforge3`). Falls die automatische Erkennung fehlschlägt, fügen Sie das Verzeichnis `Scripts` von Conda zum System-PATH hinzu oder setzen Sie die Umgebungsvariable `CONDA_EXE` auf den vollständigen Pfad von conda.exe.
+
+#### MFA installieren
+
+MFA wird in einer Conda-Umgebung installiert. Der Standardname der Umgebung ist `mfa`.
+
+```bash
+# Conda-Umgebung erstellen und MFA installieren
+conda create -n mfa -c conda-forge montreal-forced-aligner
+conda activate mfa
+```
+
+Nach der Installation von MFA laden Sie die Wörterbuch- und akustischen Modelle für die gewünschten Sprachen herunter (siehe „[MFA-Modelle installieren](#mfa-modelle-installieren)" für Details).
+
+> **Hinweis**: Während der KERT-Ausführung wird MFA automatisch über `conda run -n mfa` aufgerufen. Sie müssen `conda activate mfa` nicht vorher ausführen.
+
+#### Zusätzliches Setup für Japanisch
+
+Das japanische MFA-Modell (`japanese_mfa`) verwendet intern spacy / sudachipy. Nach der Installation von MFA installieren Sie die zusätzlichen Pakete mit den folgenden Befehlen:
+
+```bash
+conda activate mfa
+pip install spacy sudachipy sudachidict_core
+```
+
+### VOICEVOX (nur Japanisch)
+
+[VOICEVOX](https://voicevox.hiroshiba.jp/) wird für die japanische Sprachsynthese verwendet.
+
+- Starten Sie die VOICEVOX-Engine, bevor Sie KERT ausführen.
+- Die Standard-Verbindungs-URL ist `http://localhost:50021`.
+- Die Standardstimme ist ID 109 (Tohoku Itako).
+
+VOICEVOX ist nicht erforderlich, wenn Sie nur Englisch oder Deutsch verwenden.
+
+> **Wichtig: VOICEVOX-Nutzungsbedingungen**
+>
+> Wenn Sie EPUBs mit von VOICEVOX erzeugtem Audio verteilen oder veröffentlichen, müssen Sie die VOICEVOX-[Nutzungsbedingungen](https://voicevox.hiroshiba.jp/term/) und die individuellen Charakter-Nutzungsbedingungen prüfen. Für einige Charaktere gelten Einschränkungen für die kommerzielle Nutzung oder es ist eine Namensnennung erforderlich. Die Standardstimme in KERT ist „Tohoku Itako" (ID 109).
+
+### macOS say / Windows SAPI (Englisch & Deutsch)
+
+Für die englische und deutsche Sprachsynthese wird die im Betriebssystem integrierte TTS verwendet.
+
+- **macOS**: `say`-Befehl (Englisch: Samantha, Deutsch: Anna)
+- **Windows**: Verwendet System.Speech.Synthesis (SAPI) über PowerShell. Fällt automatisch von macOS say mit denselben Spracheinstellungen zurück.
+
+> **Hinweis für Windows**: Das Sprachpaket für die Zielsprache muss vorab installiert werden. Gehen Sie zu **Windows-Einstellungen > Zeit & Sprache > Sprache**, fügen Sie Englisch oder Deutsch hinzu und stellen Sie sicher, dass **Spracheingabe** aktiviert ist.
+
+### FFmpeg
+
+[FFmpeg](https://ffmpeg.org/) wird verwendet, um WAV-Dateien, die von TTS erzeugt wurden, in MP3 umzuwandeln.
+
+```bash
+# macOS (Homebrew)
+brew install ffmpeg
+
+# Windows (Chocolatey)
+choco install ffmpeg
+```
+
+Stellen Sie sicher, dass der Befehl `ffmpeg` in Ihrem PATH verfügbar ist.
+
+### pip-Pakete
+
+```bash
+pip install -r requirements.txt
+```
+
+Installierte Pakete:
+
+| Paket | Zweck |
+|-------|-------|
+| `textgrid` | Lesen von TextGrid-Dateien, die von MFA erzeugt wurden |
+| `saxonche` | XSLT 3.0-Prozessor |
+| `pdfplumber` | PDF-Text- und Bildextraktion |
+| `Pillow` | Speichern von PDF-Abbildungen als Bilddateien |
+
+saxonche wird für die XML-Eingabekonvertierung verwendet. Bei ausschließlicher Verwendung von CommonMark- oder PDF-Eingaben ist es nicht erforderlich.
+pdfplumber und Pillow werden für die PDF-Eingabe benötigt. Pillow ist nur erforderlich, wenn Abbildungen aus PDFs extrahiert werden sollen.
+
+### Unterstützung für mathematische Formeln (Optional)
+
+Mathematische Formeln in TeX-Notation (`$...$`, `$$...$$`) in CommonMark-Dateien und MathML (`<math>`) in XML-Dateien werden unterstützt. Die folgenden Werkzeuge sind erforderlich, um diese Funktion zu aktivieren.
+
+| Werkzeug | Zweck | Installation |
+|----------|-------|-------------|
+| [pandoc](https://pandoc.org/) | TeX → MathML-Konvertierung | `brew install pandoc` / [pandoc.org](https://pandoc.org/installing.html) |
+| [Node.js](https://nodejs.org/) | Laufzeit für speech-rule-engine | `brew install node` / [nodejs.org](https://nodejs.org/) |
+| [speech-rule-engine](https://github.com/zorkow/speech-rule-engine) | MathML → Sprachtext | Siehe unten |
+
+#### Unterstützte Sprachen für mathematische Sprachausgabe
+
+Die **Anzeige** mathematischer Formeln (MathML im EPUB) funktioniert unabhängig von der Sprache. Die **Sprachausgabe** (Vorlesen von Formeln während der Wiedergabe) erfordert jedoch, dass sowohl speech-rule-engine als auch MFA die Sprache unterstützen.
+
+Unterstützte Sprachen finden Sie auf [speechruleengine.org](https://speechruleengine.org/).
+
+| KERT-Sprache | Formelanzeige | Formelausgabe |
+|--------------|--------------|---------------|
+| Japanisch (ja_JP) | ✓ | ✗ Nicht verfügbar (Stand März 2026, SRE unterstützt kein Japanisch) |
+| Englisch (en_US)  | ✓ | ✓ |
+| Deutsch (de_DE)   | ✓ | ✓ |
+
+Bei japanischer Eingabe erscheinen mathematische Formeln als MathML im EPUB, werden jedoch nicht korrekt vorgelesen. Der umgebende Text wird normal verarbeitet.
+
+#### speech-rule-engine installieren
+
+speech-rule-engine muss lokal im **KERT-Projektstammverzeichnis** installiert werden.
+
+> **Wichtig**: Führen Sie `npm install` aus dem **KERT-Projektstammverzeichnis** aus. Die Installation in einem anderen Verzeichnis wird von KERT nicht erkannt, obwohl npm keinen Fehler meldet.
+
+```bash
+cd /path/to/KERT   # Zum KERT-Projektstammverzeichnis wechseln
+npm install speech-rule-engine
+```
+
+Wenn eines dieser Werkzeuge fehlt, wenn mathematische Formeln in der Eingabedatei erkannt werden, zeigt KERT eine Warnung an und fordert Sie auf, abzubrechen oder ohne Formelunterstützung fortzufahren.
+
+## Mehrsprachige Unterstützung
+
+### Unterstützte Sprachen
+
+| Sprachcode | Sprache | TTS-Engine | MFA-Wörterbuch / Akustisches Modell |
+|------------|---------|------------|-------------------------------------|
+| `ja_JP` | Japanisch | VOICEVOX | `japanese_mfa` |
+| `en_US` | Englisch (US) | macOS say (Samantha) / Windows SAPI | `english_us_arpa` |
+| `de_DE` | Deutsch | macOS say (Anna) / Windows SAPI | `german_mfa` |
+
+### MFA-Modelle installieren
+
+Laden Sie die Wörterbuch- und akustischen Modelle für die Sprachen herunter, die Sie verwenden möchten.
+
+```bash
+# Japanisch
+conda run -n mfa mfa model download dictionary japanese_mfa
+conda run -n mfa mfa model download acoustic japanese_mfa
+
+# Englisch (US)
+conda run -n mfa mfa model download dictionary english_us_arpa
+conda run -n mfa mfa model download acoustic english_us_arpa
+
+# Deutsch
+conda run -n mfa mfa model download dictionary german_mfa
+conda run -n mfa mfa model download acoustic german_mfa
+```
+
+### Neue Sprachen hinzufügen
+
+Über die drei aufgeführten Sprachen hinaus können weitere Sprachen unterstützt werden. Führen Sie dazu folgende Schritte aus:
+
+1. **MFA-Modelle vorbereiten**: Installieren Sie die Wörterbuch- und akustischen Modelle für die Zielsprache. Verfügbare Modelle finden Sie in der [MFA-Dokumentation](https://mfa-models.readthedocs.io/).
+
+2. **Eintrag zu `LANGUAGE_CONFIGS` in `core/config.py` hinzufügen**: Verwenden Sie folgendes Format:
+
+```python
+"fr_FR": LanguageConfig(
+    code="fr_FR",
+    display_name="Fran\u00e7ais",
+    epub_lang="fr",
+    mfa_dictionary="french_mfa",      # MFA-Wörterbuchmodellname
+    mfa_acoustic="french_mfa",        # MFA-akustischer Modellname
+    tts_engine="say",                  # "voicevox" oder "say"
+    tts_voice="Thomas",               # macOS say-Stimmenname (bei Verwendung von say)
+),
+```
+
+- `tts_engine`: Verwenden Sie `"voicevox"` für Japanisch, `"say"` für andere Sprachen. Unter Windows wird bei Angabe von `"say"` automatisch auf SAPI zurückgefallen.
+- `tts_voice`: Der Stimmenname für macOS say. Führen Sie `say -v '?'` aus, um verfügbare Stimmen aufzulisten.
 
 ## Anpassung
 
