@@ -72,6 +72,7 @@ class KertApp:
 
         self._build_ui()
         self._update_form()  # 初期表示状態を整える
+        self._log_append(msg("startup_notice"))
 
     # ------------------------------------------------------------------
     # UI 構築
@@ -155,7 +156,9 @@ class KertApp:
         self._path_entry.drop_target_register(DND_FILES)
         self._path_entry.dnd_bind("<<Drop>>", self._on_drop)
         self._browse_btn = ttk.Button(path_frame, text="参照... / Browse...", command=self._browse)
-        self._browse_btn.grid(row=0, column=2)
+        self._browse_btn.grid(row=0, column=2, sticky="ew")
+        ttk.Button(path_frame, text="パスをクリア / Clear Path",
+                   command=lambda: self._path_var.set("")).grid(row=1, column=2, sticky="ew", pady=(2, 0))
 
         # ── 中間ファイル保持 ──
         self._keep_var = tk.BooleanVar(value=False)

@@ -94,7 +94,7 @@ python3 main.py
 
 ## ドキュメントの作り方
 
-KERT は **CommonMark 拡張記法**、**XML 形式**、**PDF 形式** の 3 種類の入力形式に対応しています。
+KERT は **CommonMark 拡張記法**、**XML 形式**、**PDF 形式** の 3 種類の入力形式に対応しています。いずれの形式でも、[書誌情報ファイル（metadata.txt）](#書誌情報ファイルmetadatatxt)の添付が必須です。
 
 ### CommonMark 拡張記法
 
