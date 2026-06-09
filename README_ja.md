@@ -50,7 +50,28 @@ OS・言語に合ったインストーラの選び方は **[`easy_installer/INST
 
 **macOS**: KERT フォルダ内の `start_kert.command` をダブルクリックして起動します。
 
-コマンドラインから直接実行する場合:
+起動すると以下のウィンドウが表示されます。
+
+![KERT GUIスクリーンショット](docs/images/GUI.png)
+
+以下の順に設定し、「実行 / Run」ボタンを押してください。
+
+1. **言語**: 日本語 / English (US) / Deutsch から選択
+2. **入力形式**: CommonMark (.txt/.md) / XML / PDF から選択
+3. **処理モード**: 単一ファイル / フォルダ / PDF → MD 変換のみ から選択
+4. **（PDF のみ）見出し検出**: レイアウト重視 / 法令文言 / 番号記号 から選択
+5. **パス**: 入力ファイルまたはフォルダのパスを入力（「参照... / Browse...」ボタンまたはウィンドウへのドラッグ＆ドロップも可）
+6. **中間ファイル**: 「中間ファイルを残す」をチェックすると処理後も中間ファイルが保持されます
+
+処理中はウィンドウ下部のログエリアに進捗が表示されます。完了後にダイアログが表示されます。
+
+### 終了方法
+
+処理完了後にウィンドウを閉じてください（タイトルバーの閉じるボタン、または macOS では Cmd+Q）。
+
+> **注意**: 処理中にウィンドウを閉じると、処理は即座に中断されます。生成途中の EPUB ファイルが残る場合があります。
+
+コマンドラインから直接実行することもできます（上級者向け）:
 
 ```bash
 # Windows
@@ -58,61 +79,6 @@ py -3.12 main.py
 
 # macOS
 python3 main.py
-```
-
-> **ARM64 環境について**: Windows ARM64・macOS Apple Silicon では saxonche が利用できないため、**XML 入力機能は使用できません**。CommonMark（.md/.txt）形式の入力は問題なく使用できます。
-
-対話形式で以下を順に選択します。
-
-1. **言語**: 日本語 / English (US) / Deutsch
-2. **入力形式**: CommonMark 拡張テキストファイル / XML ファイル / **PDF ファイル**
-3. **処理モード**: 単一ファイル / フォルダ（複数ファイル） / *（PDF のみ）* Markdown 生成
-4. **（PDF のみ）見出し検出モード**: レイアウト重視 / 法令文言 / 番号付き・記号付き
-5. **入力パス**: ファイルまたはフォルダのパス
-6. **中間ファイル**: 残すかどうか
-
-> **ヒント**: 入力待ち中に **ESC キー** または **Ctrl+C** を押すと、即座に処理をキャンセルして終了できます。
-
-### 実行例
-
-日本語・CommonMark・単一ファイルの場合:
-
-```
-> start_kert.bat   (または: py -3.12 main.py)
-==================================================
-EPUB生成ツール
-==================================================
-[注意]
-  ・日本語を処理する場合は、処理が完了するまで VOICEVOX を終了しないでください。
-  ・処理には数分かかります。
-
-言語を選択してください / Select language:
-  1: 日本語 (ja_JP)
-  2: English (US) (en_US)
-  3: Deutsch (de_DE)
-------
-言語 / Language (1-3, デフォルト: 1): 1
-------
-入力形式を選択してください:
-  1: CommonMark拡張テキストファイル（.txt/.md）
-  2: XMLファイル（.xml）
-------
-選択 (1-2, デフォルト: 1): 1
-------
-処理モードを選択してください:
-  1: 単一CommonMark拡張ファイルからEPUB生成
-  2: フォルダ内の複数CommonMark拡張ファイルからEPUB生成
-------
-選択 (1-2, デフォルト: 1): 1
-------
-CommonMark拡張ファイル（.txt/.md）のパスを指定してください
-/path/to/mybook.txt
-------
-中間ファイル（META-INF, OEBPS, audio.*）を残しますか？
-  1: 残さない（デフォルト）
-  2: 残す
-------
-選択 (1-2, デフォルト: 1): 1
 ```
 
 ### 出力ファイル
@@ -125,188 +91,6 @@ CommonMark拡張ファイル（.txt/.md）のパスを指定してください
 - タイムスタンプ: `YYYYMMDDHHmmss` 形式
 
 例: `mybook_111_20250219143000.epub`
-
-## 必要な環境
-
-### Python
-
-Python 3.12 以上が必要です（型ヒントに `X | None` 構文を使用しているため）。
-
-### Conda / Montreal Forced Aligner (MFA)
-
-音声とテキストのアライメント（どの単語が音声のどの位置に対応するかの解析）に [Montreal Forced Aligner (MFA)](https://montreal-forced-aligner.readthedocs.io/) を使用します。
-
-#### Conda のインストール
-
-MFA の実行環境として Conda が必要です。[Miniforge](https://github.com/conda-forge/miniforge) または [Miniconda](https://docs.anaconda.com/free/miniconda/) をインストールしてください。
-
-> **Windows での注意**: KERT は conda の実行ファイルを自動的に検出します（PATH、環境変数 `CONDA_EXE`、`%USERPROFILE%\miniforge3` 等の一般的なインストールパスを順に検索）。自動検出で見つからない場合は、システム環境変数の PATH に Conda の `Scripts` ディレクトリを追加するか、環境変数 `CONDA_EXE` に conda.exe のフルパスを設定してください。
-
-#### MFA のインストール
-
-MFA は Conda 環境にインストールします。環境名はデフォルトで `mfa` です。
-
-```bash
-# Conda 環境の作成と MFA インストール
-conda create -n mfa -c conda-forge montreal-forced-aligner
-conda activate mfa
-```
-
-MFA のインストール後、使用する言語の辞書モデルと音響モデルをダウンロードしてください（詳細は「[MFA モデルのインストール](#mfa-モデルのインストール)」を参照）。
-
-> **注意**: KERT の実行中に MFA は `conda run -n mfa` 経由で自動的に呼び出されるため、事前に `conda activate mfa` する必要はありません。
-
-#### 日本語使用時の追加セットアップ
-
-日本語の MFA モデル（`japanese_mfa`）は内部で spacy / sudachipy を使用します。MFA インストール後に以下のコマンドで追加パッケージをインストールしてください:
-
-```bash
-conda activate mfa
-pip install spacy sudachipy sudachidict_core
-```
-
-### VOICEVOX（日本語のみ）
-
-日本語の音声合成には [VOICEVOX](https://voicevox.hiroshiba.jp/) を使用します。
-
-- VOICEVOX エンジンを起動した状態で KERT を実行してください。
-- デフォルトの接続先は `http://localhost:50021` です。
-- デフォルトのスピーカーは ID 109（東北イタコ）です。
-
-英語・ドイツ語のみ使用する場合は VOICEVOX は不要です。
-
-> **重要: VOICEVOX の利用規約について**
->
-> VOICEVOX で生成した音声を含む EPUB を配布・公開する場合は、VOICEVOX の[利用規約](https://voicevox.hiroshiba.jp/term/)および使用したキャラクターごとの利用規約を必ず確認してください。キャラクターによっては商用利用の制限やクレジット表記の義務があります。KERT のデフォルト話者は「東北イタコ」（ID 109）です。利用規約の詳細は [東北イタコ公式サイト](https://voicevox.hiroshiba.jp/product/tohoku_itako/) を参照してください。
-
-### macOS say / Windows SAPI（英語・ドイツ語）
-
-英語・ドイツ語の音声合成には OS 組み込みの TTS を使用します。
-
-- **macOS**: `say` コマンド（英語: Samantha、ドイツ語: Anna）
-- **Windows**: PowerShell 経由で System.Speech.Synthesis（SAPI）を使用。macOS say と同じ言語設定で自動的にフォールバックされます。
-
-> **Windows での注意**: 事前に対象言語の言語パックをインストールしておく必要があります。**Windows の設定 > 時刻と言語 > 言語と地域** から英語またはドイツ語を追加し、**音声**機能が有効になっていることを確認してください。
-
-### FFmpeg
-
-TTS が生成した WAV ファイルを MP3 に変換するために [FFmpeg](https://ffmpeg.org/) を使用します。
-
-```bash
-# macOS (Homebrew)
-brew install ffmpeg
-
-# Windows (Chocolatey)
-choco install ffmpeg
-```
-
-`ffmpeg` コマンドにパスが通っていることを確認してください。
-
-### pip パッケージ
-
-```bash
-pip install -r requirements.txt
-```
-
-インストールされるパッケージ:
-
-| パッケージ | 用途 |
-|-----------|------|
-| `textgrid` | MFA が生成した TextGrid ファイルの読み込み |
-| `saxonche` | XSLT 3.0 プロセッサ |
-| `pdfplumber` | PDF テキスト・画像抽出 |
-| `Pillow` | PDF 図版画像の保存 |
-
-saxonche は XML 入力時の変換に使用します。CommonMark または PDF 入力のみの場合は不要です。
-pdfplumber と Pillow は PDF 入力に必要です。Pillow は PDF 内の図版を抽出する場合にのみ必要です。
-
-### 数式サポート（オプション）
-
-CommonMarkファイル内の TeX 記法（`$...$`、`$$...$$`）および XML ファイル内の MathML（`<math>`）による数式入力に対応しています。この機能を使用するには、以下のツールが必要です。
-
-| ツール | 用途 | インストール方法 |
-|-------|------|--------------|
-| [pandoc](https://pandoc.org/) | TeX → MathML 変換 | `brew install pandoc` / [pandoc.org](https://pandoc.org/installing.html) |
-| [Node.js](https://nodejs.org/) | speech-rule-engine の実行環境 | `brew install node` / [nodejs.org](https://nodejs.org/) |
-| [speech-rule-engine](https://github.com/zorkow/speech-rule-engine) | MathML → 読み上げテキスト変換 | 下記参照 |
-
-#### 数式サポートの対応言語
-
-数式の **EPUB への表示**（MathML）はすべての言語で動作します。ただし、数式の **音声読み上げ**（再生時の読み上げ）には、speech-rule-engine と MFA の両方が対象言語に対応している必要があります。
-
-speech-rule-engine の対応言語については [speechruleengine.org](https://speechruleengine.org/) を参照してください。
-
-| KERT 言語 | 数式表示 | 数式読み上げ |
-|-----------|---------|------------|
-| 日本語（ja_JP） | ✓ | ✗ 非対応（2026年3月現在、SRE が日本語に非対応） |
-| 英語（en_US）   | ✓ | ✓ |
-| ドイツ語（de_DE）| ✓ | ✓ |
-
-日本語入力の場合、数式は EPUB に MathML として表示されますが、正常な音声読み上げは行われません。数式以外のテキストは通常どおり処理されます。
-
-#### speech-rule-engine のインストール
-
-speech-rule-engine は **KERT プロジェクトルートに** ローカルインストールする必要があります。
-
-> **重要**: `npm install` は必ず **KERT プロジェクトのルートディレクトリで** 実行してください。別のディレクトリで実行しても npm はエラーを出しませんが、KERT はツールを認識できません。
-
-```bash
-cd /path/to/KERT   # KERT プロジェクトルートに移動
-npm install speech-rule-engine
-```
-
-入力ファイルに数式が検出された際にこれらのツールが見つからない場合、KERTは警告を表示し、処理を中止するか数式なしで続行するかを選択できます。
-
-## 多言語対応
-
-### 対応言語一覧
-
-| 言語コード | 言語 | TTS エンジン | MFA 辞書 / 音響モデル |
-|-----------|------|-------------|---------------------|
-| `ja_JP` | 日本語 | VOICEVOX | `japanese_mfa` |
-| `en_US` | English (US) | macOS say (Samantha) / Windows SAPI | `english_us_arpa` |
-| `de_DE` | Deutsch | macOS say (Anna) / Windows SAPI | `german_mfa` |
-
-### MFA モデルのインストール
-
-使用する言語に応じて、MFA の辞書モデルと音響モデルをダウンロードしてください。
-
-```bash
-# 日本語
-conda run -n mfa mfa model download dictionary japanese_mfa
-conda run -n mfa mfa model download acoustic japanese_mfa
-
-# 英語 (US)
-conda run -n mfa mfa model download dictionary english_us_arpa
-conda run -n mfa mfa model download acoustic english_us_arpa
-
-# ドイツ語
-conda run -n mfa mfa model download dictionary german_mfa
-conda run -n mfa mfa model download acoustic german_mfa
-```
-
-### 新しい言語の追加方法
-
-上記 3 言語以外も対応可能です。言語を追加するには、以下の手順で行います。
-
-1. **MFA モデルの準備**: 対象言語の辞書モデルと音響モデルをインストールします。利用可能なモデルは [MFA のドキュメント](https://mfa-models.readthedocs.io/) を参照してください。
-
-2. **`core/config.py` の `LANGUAGE_CONFIGS` に追記**: 以下の形式でエントリを追加します。
-
-```python
-"fr_FR": LanguageConfig(
-    code="fr_FR",
-    display_name="Français",
-    epub_lang="fr",
-    mfa_dictionary="french_mfa",      # MFA 辞書モデル名
-    mfa_acoustic="french_mfa",        # MFA 音響モデル名
-    tts_engine="say",                  # "voicevox" または "say"
-    tts_voice="Thomas",               # macOS say の音声名（say の場合）
-),
-```
-
-- `tts_engine`: 日本語は `"voicevox"`、それ以外は `"say"` を指定します。Windows では `"say"` 指定時に自動的に SAPI にフォールバックされます。
-- `tts_voice`: macOS say で使用する音声名です。`say -v '?'` で利用可能な音声を確認できます。
 
 ## ドキュメントの作り方
 
@@ -561,6 +345,190 @@ chapters/
 - CommonMark の場合、`.txt` と `.md` の両方が収集対象です。
 - XML の場合、`.xml` ファイルが収集対象です。
 - フォルダの `_metadata.txt` は親ディレクトリに配置してください。
+
+## 必要な環境
+
+> **簡単インストールを使用した場合**: `easy_installer/` のインストーラスクリプトでセットアップした場合、このセクションの手順は**数式サポートを除いてすべて実施済み**です。数式サポート（オプション）のみ必要に応じて追加してください。
+
+### Python
+
+Python 3.12 以上が必要です（型ヒントに `X | None` 構文を使用しているため）。
+
+### Conda / Montreal Forced Aligner (MFA)
+
+音声とテキストのアライメント（どの単語が音声のどの位置に対応するかの解析）に [Montreal Forced Aligner (MFA)](https://montreal-forced-aligner.readthedocs.io/) を使用します。
+
+#### Conda のインストール
+
+MFA の実行環境として Conda が必要です。[Miniforge](https://github.com/conda-forge/miniforge) または [Miniconda](https://docs.anaconda.com/free/miniconda/) をインストールしてください。
+
+> **Windows での注意**: KERT は conda の実行ファイルを自動的に検出します（PATH、環境変数 `CONDA_EXE`、`%USERPROFILE%\miniforge3` 等の一般的なインストールパスを順に検索）。自動検出で見つからない場合は、システム環境変数の PATH に Conda の `Scripts` ディレクトリを追加するか、環境変数 `CONDA_EXE` に conda.exe のフルパスを設定してください。
+
+#### MFA のインストール
+
+MFA は Conda 環境にインストールします。環境名はデフォルトで `mfa` です。
+
+```bash
+# Conda 環境の作成と MFA インストール
+conda create -n mfa -c conda-forge montreal-forced-aligner
+conda activate mfa
+```
+
+MFA のインストール後、使用する言語の辞書モデルと音響モデルをダウンロードしてください（詳細は「[MFA モデルのインストール](#mfa-モデルのインストール)」を参照）。
+
+> **注意**: KERT の実行中に MFA は `conda run -n mfa` 経由で自動的に呼び出されるため、事前に `conda activate mfa` する必要はありません。
+
+#### 日本語使用時の追加セットアップ
+
+日本語の MFA モデル（`japanese_mfa`）は内部で spacy / sudachipy を使用します。MFA インストール後に以下のコマンドで追加パッケージをインストールしてください:
+
+```bash
+conda activate mfa
+pip install spacy sudachipy sudachidict_core
+```
+
+### VOICEVOX（日本語のみ）
+
+日本語の音声合成には [VOICEVOX](https://voicevox.hiroshiba.jp/) を使用します。
+
+- VOICEVOX エンジンを起動した状態で KERT を実行してください。
+- デフォルトの接続先は `http://localhost:50021` です。
+- デフォルトのスピーカーは ID 109（東北イタコ）です。
+
+英語・ドイツ語のみ使用する場合は VOICEVOX は不要です。
+
+> **重要: VOICEVOX の利用規約について**
+>
+> VOICEVOX で生成した音声を含む EPUB を配布・公開する場合は、VOICEVOX の[利用規約](https://voicevox.hiroshiba.jp/term/)および使用したキャラクターごとの利用規約を必ず確認してください。キャラクターによっては商用利用の制限やクレジット表記の義務があります。KERT のデフォルト話者は「東北イタコ」（ID 109）です。利用規約の詳細は [東北イタコ公式サイト](https://voicevox.hiroshiba.jp/product/tohoku_itako/) を参照してください。
+
+### macOS say / Windows SAPI（英語・ドイツ語）
+
+英語・ドイツ語の音声合成には OS 組み込みの TTS を使用します。
+
+- **macOS**: `say` コマンド（英語: Samantha、ドイツ語: Anna）
+- **Windows**: PowerShell 経由で System.Speech.Synthesis（SAPI）を使用。macOS say と同じ言語設定で自動的にフォールバックされます。
+
+> **Windows での注意**: 事前に対象言語の言語パックをインストールしておく必要があります。**Windows の設定 > 時刻と言語 > 言語と地域** から英語またはドイツ語を追加し、**音声**機能が有効になっていることを確認してください。
+
+### FFmpeg
+
+TTS が生成した WAV ファイルを MP3 に変換するために [FFmpeg](https://ffmpeg.org/) を使用します。
+
+```bash
+# macOS (Homebrew)
+brew install ffmpeg
+
+# Windows (Chocolatey)
+choco install ffmpeg
+```
+
+`ffmpeg` コマンドにパスが通っていることを確認してください。
+
+### pip パッケージ
+
+```bash
+pip install -r requirements.txt
+```
+
+インストールされるパッケージ:
+
+| パッケージ | 用途 |
+|-----------|------|
+| `textgrid` | MFA が生成した TextGrid ファイルの読み込み |
+| `saxonche` | XSLT 3.0 プロセッサ |
+| `pdfplumber` | PDF テキスト・画像抽出 |
+| `Pillow` | PDF 図版画像の保存 |
+
+saxonche は XML 入力時の変換に使用します。CommonMark または PDF 入力のみの場合は不要です。
+pdfplumber と Pillow は PDF 入力に必要です。Pillow は PDF 内の図版を抽出する場合にのみ必要です。
+
+### 数式サポート（オプション）
+
+CommonMarkファイル内の TeX 記法（`$...$`、`$$...$$`）および XML ファイル内の MathML（`<math>`）による数式入力に対応しています。この機能を使用するには、以下のツールが必要です。
+
+| ツール | 用途 | インストール方法 |
+|-------|------|--------------|
+| [pandoc](https://pandoc.org/) | TeX → MathML 変換 | `brew install pandoc` / [pandoc.org](https://pandoc.org/installing.html) |
+| [Node.js](https://nodejs.org/) | speech-rule-engine の実行環境 | `brew install node` / [nodejs.org](https://nodejs.org/) |
+| [speech-rule-engine](https://github.com/zorkow/speech-rule-engine) | MathML → 読み上げテキスト変換 | 下記参照 |
+
+#### 数式サポートの対応言語
+
+数式の **EPUB への表示**（MathML）はすべての言語で動作します。ただし、数式の **音声読み上げ**（再生時の読み上げ）には、speech-rule-engine と MFA の両方が対象言語に対応している必要があります。
+
+speech-rule-engine の対応言語については [speechruleengine.org](https://speechruleengine.org/) を参照してください。
+
+| KERT 言語 | 数式表示 | 数式読み上げ |
+|-----------|---------|------------|
+| 日本語（ja_JP） | ✓ | ✗ 非対応（2026年3月現在、SRE が日本語に非対応） |
+| 英語（en_US）   | ✓ | ✓ |
+| ドイツ語（de_DE）| ✓ | ✓ |
+
+日本語入力の場合、数式は EPUB に MathML として表示されますが、正常な音声読み上げは行われません。数式以外のテキストは通常どおり処理されます。
+
+#### speech-rule-engine のインストール
+
+speech-rule-engine は **KERT プロジェクトルートに** ローカルインストールする必要があります。
+
+> **重要**: `npm install` は必ず **KERT プロジェクトのルートディレクトリで** 実行してください。別のディレクトリで実行しても npm はエラーを出しませんが、KERT はツールを認識できません。
+
+```bash
+cd /path/to/KERT   # KERT プロジェクトルートに移動
+npm install speech-rule-engine
+```
+
+入力ファイルに数式が検出された際にこれらのツールが見つからない場合、KERTは警告を表示し、処理を中止するか数式なしで続行するかを選択できます。
+
+## 多言語対応
+
+### 対応言語一覧
+
+| 言語コード | 言語 | TTS エンジン | MFA 辞書 / 音響モデル |
+|-----------|------|-------------|---------------------|
+| `ja_JP` | 日本語 | VOICEVOX | `japanese_mfa` |
+| `en_US` | English (US) | macOS say (Samantha) / Windows SAPI | `english_us_arpa` |
+| `de_DE` | Deutsch | macOS say (Anna) / Windows SAPI | `german_mfa` |
+
+### MFA モデルのインストール
+
+使用する言語に応じて、MFA の辞書モデルと音響モデルをダウンロードしてください。
+
+```bash
+# 日本語
+conda run -n mfa mfa model download dictionary japanese_mfa
+conda run -n mfa mfa model download acoustic japanese_mfa
+
+# 英語 (US)
+conda run -n mfa mfa model download dictionary english_us_arpa
+conda run -n mfa mfa model download acoustic english_us_arpa
+
+# ドイツ語
+conda run -n mfa mfa model download dictionary german_mfa
+conda run -n mfa mfa model download acoustic german_mfa
+```
+
+### 新しい言語の追加方法
+
+上記 3 言語以外も対応可能です。言語を追加するには、以下の手順で行います。
+
+1. **MFA モデルの準備**: 対象言語の辞書モデルと音響モデルをインストールします。利用可能なモデルは [MFA のドキュメント](https://mfa-models.readthedocs.io/) を参照してください。
+
+2. **`core/config.py` の `LANGUAGE_CONFIGS` に追記**: 以下の形式でエントリを追加します。
+
+```python
+"fr_FR": LanguageConfig(
+    code="fr_FR",
+    display_name="Français",
+    epub_lang="fr",
+    mfa_dictionary="french_mfa",      # MFA 辞書モデル名
+    mfa_acoustic="french_mfa",        # MFA 音響モデル名
+    tts_engine="say",                  # "voicevox" または "say"
+    tts_voice="Thomas",               # macOS say の音声名（say の場合）
+),
+```
+
+- `tts_engine`: 日本語は `"voicevox"`、それ以外は `"say"` を指定します。Windows では `"say"` 指定時に自動的に SAPI にフォールバックされます。
+- `tts_voice`: macOS say で使用する音声名です。`say -v '?'` で利用可能な音声を確認できます。
 
 ## カスタマイズ
 
