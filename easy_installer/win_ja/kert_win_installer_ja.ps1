@@ -440,7 +440,7 @@ if ($null -eq $pyExe) {
     Write-Host ""
 
     # --- textgrid（純 Python、全プラットフォーム対応）---
-    Write-Host "[1/3] textgrid をインストールしています..."
+    Write-Host "[1/4] textgrid をインストールしています..."
     $pyArgs = $pyExe.Split()
     & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "textgrid"))
     if ($LASTEXITCODE -eq 0) {
@@ -452,7 +452,7 @@ if ($null -eq $pyExe) {
     Write-Host ""
 
     # --- saxonche（SaxonC バインディング、ARM64 Windows 非対応）---
-    Write-Host "[2/3] saxonche をインストールしています..."
+    Write-Host "[2/4] saxonche をインストールしています..."
     $arch = $env:PROCESSOR_ARCHITECTURE
     if ($arch -eq "ARM64") {
         Write-Host ""
@@ -488,12 +488,23 @@ if ($null -eq $pyExe) {
     Write-Host ""
 
     # --- pdfplumber / Pillow（PDF処理用）---
-    Write-Host "[3/3] pdfplumber / Pillow をインストールしています..."
+    Write-Host "[3/4] pdfplumber / Pillow をインストールしています..."
     & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "pdfplumber", "Pillow"))
     if ($LASTEXITCODE -eq 0) {
         Write-Host "[完了] pdfplumber / Pillow のインストールが完了しました。"
     } else {
         Write-Host "[エラー] pdfplumber / Pillow のインストールに失敗しました。" -ForegroundColor Red
+    }
+
+    Write-Host ""
+
+    # --- tkinterdnd2（GUI ドラッグ＆ドロップ用）---
+    Write-Host "[4/4] tkinterdnd2 をインストールしています..."
+    & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "tkinterdnd2>=0.4.2,<0.5.0"))
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "[完了] tkinterdnd2 のインストールが完了しました。"
+    } else {
+        Write-Host "[エラー] tkinterdnd2 のインストールに失敗しました。" -ForegroundColor Red
     }
 }
 

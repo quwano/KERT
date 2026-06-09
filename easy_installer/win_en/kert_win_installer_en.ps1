@@ -383,7 +383,7 @@ if ($null -eq $pyExe) {
 
     $pyArgs = $pyExe.Split()
 
-    Write-Host "[1/2] Installing textgrid..."
+    Write-Host "[1/4] Installing textgrid..."
     & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "textgrid"))
     if ($LASTEXITCODE -eq 0) {
         Write-Host "[Done] textgrid installation complete."
@@ -393,7 +393,7 @@ if ($null -eq $pyExe) {
 
     Write-Host ""
 
-    Write-Host "[2/2] Installing saxonche..."
+    Write-Host "[2/4] Installing saxonche..."
     $arch = $env:PROCESSOR_ARCHITECTURE
     if ($arch -eq "ARM64") {
         Write-Host ""
@@ -428,12 +428,23 @@ if ($null -eq $pyExe) {
     Write-Host ""
 
     # --- pdfplumber / Pillow (PDF processing) ---
-    Write-Host "[3/3] Installing pdfplumber / Pillow..."
+    Write-Host "[3/4] Installing pdfplumber / Pillow..."
     & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "pdfplumber", "Pillow"))
     if ($LASTEXITCODE -eq 0) {
         Write-Host "[Done] pdfplumber / Pillow installation complete."
     } else {
         Write-Host "[Error] pdfplumber / Pillow installation failed." -ForegroundColor Red
+    }
+
+    Write-Host ""
+
+    # --- tkinterdnd2 (GUI drag-and-drop) ---
+    Write-Host "[4/4] Installing tkinterdnd2..."
+    & $pyArgs[0] @($pyArgs[1..99] + @("-m", "pip", "install", "tkinterdnd2>=0.4.2,<0.5.0"))
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "[Done] tkinterdnd2 installation complete."
+    } else {
+        Write-Host "[Error] tkinterdnd2 installation failed." -ForegroundColor Red
     }
 }
 

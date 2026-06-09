@@ -6,3 +6,7 @@ textgrid
 
 # XSLT 3.0 processor (Saxon-HE for Python)
 saxonche
+
+# Drag-and-drop support for GUI (tkinterdnd2 wraps TkDND Tcl extension)
+# 0.5.x+ requires Tcl 9; pin to 0.4.x for Tcl 8.6 compatibility
+tkinterdnd2>=0.4.2,<0.5.0

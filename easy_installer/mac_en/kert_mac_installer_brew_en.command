@@ -403,7 +403,7 @@ else
     echo "Python in use: $PY_CMD ($($PY_CMD --version))"
     echo ""
 
-    echo "[1/2] Installing textgrid..."
+    echo "[1/3] Installing textgrid..."
     if $PY_CMD -m pip install textgrid; then
         echo "[Done] textgrid installation complete."
     else
@@ -412,7 +412,7 @@ else
 
     echo ""
 
-    echo "[2/2] Installing saxonche..."
+    echo "[2/3] Installing saxonche..."
     if [ "$ARCH" = "arm64" ]; then
         echo ""
         echo -e "${YELLOW}[Warning] Apple Silicon (ARM64) Mac detected.${NC}"
@@ -425,6 +425,15 @@ else
     else
         echo -e "${RED}[Error] saxonche installation failed.${NC}"
         echo "Please check your internet connection and Python version."
+    fi
+
+    echo ""
+
+    echo "[3/3] Installing tkinterdnd2..."
+    if $PY_CMD -m pip install "tkinterdnd2>=0.4.2,<0.5.0"; then
+        echo "[Done] tkinterdnd2 installation complete."
+    else
+        echo -e "${RED}[Error] tkinterdnd2 installation failed.${NC}"
     fi
 fi
 

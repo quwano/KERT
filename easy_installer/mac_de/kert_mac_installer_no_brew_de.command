@@ -399,6 +399,15 @@ else
         echo -e "${RED}[Fehler] saxonche-Installation fehlgeschlagen.${NC}"
         echo "Bitte Internetverbindung und Python-Version pruefen."
     fi
+
+    echo ""
+
+    echo "[3/3] tkinterdnd2 wird installiert..."
+    if $PY_CMD -m pip install "tkinterdnd2>=0.4.2,<0.5.0"; then
+        echo "[Fertig] tkinterdnd2 wurde erfolgreich installiert."
+    else
+        echo -e "${RED}[Fehler] tkinterdnd2-Installation fehlgeschlagen.${NC}"
+    fi
 fi
 
 ask_continue

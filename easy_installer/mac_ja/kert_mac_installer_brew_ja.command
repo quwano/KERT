@@ -504,6 +504,15 @@ else
         echo -e "${RED}[エラー] saxonche のインストールに失敗しました。${NC}"
         echo "インターネット接続と Python のバージョンを確認してください。"
     fi
+
+    echo ""
+
+    echo "[3/3] tkinterdnd2 をインストールしています..."
+    if $PY_CMD -m pip install "tkinterdnd2>=0.4.2,<0.5.0"; then
+        echo "[完了] tkinterdnd2 のインストールが完了しました。"
+    else
+        echo -e "${RED}[エラー] tkinterdnd2 のインストールに失敗しました。${NC}"
+    fi
 fi
 
 ask_continue
