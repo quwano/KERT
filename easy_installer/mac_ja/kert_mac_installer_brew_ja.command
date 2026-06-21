@@ -474,6 +474,8 @@ elif python3 --version &>/dev/null; then
     PY_CMD="python3"
 fi
 
+BREW_CMD=$(resolve_brew)
+
 if [ -z "$PY_CMD" ]; then
     echo -e "${RED}[エラー] Python が見つかりません。ステップ 2 を確認してください。${NC}"
     echo ""
@@ -481,7 +483,19 @@ else
     echo "使用する Python: $PY_CMD ($($PY_CMD --version))"
     echo ""
 
-    echo "[1/3] textgrid をインストールしています..."
+    echo "[1/4] python-tk（Tkinter）をインストールしています..."
+    if [ -z "$BREW_CMD" ]; then
+        echo -e "${RED}[エラー] Homebrew が見つかりません。ステップ 1 を確認してください。${NC}"
+    elif "$BREW_CMD" install python-tk@3.12; then
+        echo "[完了] python-tk のインストールが完了しました。"
+    else
+        echo -e "${RED}[エラー] python-tk のインストールに失敗しました。${NC}"
+        echo "GUI（tkinterdnd2）が起動できない場合の原因になります。"
+    fi
+
+    echo ""
+
+    echo "[2/4] textgrid をインストールしています..."
     if $PY_CMD -m pip install --break-system-packages textgrid; then
         echo "[完了] textgrid のインストールが完了しました。"
     else
@@ -490,7 +504,7 @@ else
 
     echo ""
 
-    echo "[2/3] saxonche をインストールしています..."
+    echo "[3/4] saxonche をインストールしています..."
     if [ "$ARCH" = "arm64" ]; then
         echo ""
         echo -e "${YELLOW}[警告] Apple Silicon (ARM64) Mac が検出されました。${NC}"
@@ -507,7 +521,7 @@ else
 
     echo ""
 
-    echo "[3/3] tkinterdnd2 をインストールしています..."
+    echo "[4/4] tkinterdnd2 をインストールしています..."
     if $PY_CMD -m pip install --break-system-packages "tkinterdnd2>=0.4.2,<0.5.0"; then
         echo "[完了] tkinterdnd2 のインストールが完了しました。"
     else

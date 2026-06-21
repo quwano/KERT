@@ -386,6 +386,8 @@ elif python3 --version &>/dev/null; then
     PY_CMD="python3"
 fi
 
+BREW_CMD=$(resolve_brew)
+
 if [ -z "$PY_CMD" ]; then
     echo -e "${RED}[Fehler] Python nicht gefunden. Bitte Schritt 2 pruefen.${NC}"
     echo ""
@@ -393,7 +395,19 @@ else
     echo "Verwendetes Python: $PY_CMD ($($PY_CMD --version))"
     echo ""
 
-    echo "[1/3] textgrid wird installiert..."
+    echo "[1/4] python-tk (Tkinter) wird installiert..."
+    if [ -z "$BREW_CMD" ]; then
+        echo -e "${RED}[Fehler] Homebrew nicht gefunden. Bitte Schritt 1 pruefen.${NC}"
+    elif "$BREW_CMD" install python-tk@3.12; then
+        echo "[Fertig] python-tk wurde erfolgreich installiert."
+    else
+        echo -e "${RED}[Fehler] python-tk-Installation fehlgeschlagen.${NC}"
+        echo "Dies kann verhindern, dass die GUI (tkinterdnd2) startet."
+    fi
+
+    echo ""
+
+    echo "[2/4] textgrid wird installiert..."
     if $PY_CMD -m pip install --break-system-packages textgrid; then
         echo "[Fertig] textgrid wurde erfolgreich installiert."
     else
@@ -402,7 +416,7 @@ else
 
     echo ""
 
-    echo "[2/3] saxonche wird installiert..."
+    echo "[3/4] saxonche wird installiert..."
     if [ "$ARCH" = "arm64" ]; then
         echo ""
         echo -e "${YELLOW}[Warnung] Apple Silicon (ARM64) Mac erkannt.${NC}"
@@ -419,7 +433,7 @@ else
 
     echo ""
 
-    echo "[3/3] tkinterdnd2 wird installiert..."
+    echo "[4/4] tkinterdnd2 wird installiert..."
     if $PY_CMD -m pip install --break-system-packages "tkinterdnd2>=0.4.2,<0.5.0"; then
         echo "[Fertig] tkinterdnd2 wurde erfolgreich installiert."
     else
