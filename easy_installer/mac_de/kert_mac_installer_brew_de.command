@@ -186,7 +186,7 @@ else
     fi
 
     echo "[3/3] pdfplumber Pillow wird installiert..."
-    if $PY_CMD -m pip install pdfplumber Pillow; then
+    if $PY_CMD -m pip install --break-system-packages pdfplumber Pillow; then
         echo "[Fertig] pdfplumber Pillow wurde erfolgreich installiert."
     else
         echo -e "${RED}[Fehler] pdfplumber Pillow-Installation fehlgeschlagen.${NC}"
@@ -394,7 +394,7 @@ else
     echo ""
 
     echo "[1/3] textgrid wird installiert..."
-    if $PY_CMD -m pip install textgrid; then
+    if $PY_CMD -m pip install --break-system-packages textgrid; then
         echo "[Fertig] textgrid wurde erfolgreich installiert."
     else
         echo -e "${RED}[Fehler] textgrid-Installation fehlgeschlagen.${NC}"
@@ -410,7 +410,7 @@ else
         echo "nicht automatisch installiert werden."
         echo ""
         echo "saxonche wird nicht benoetigt, wenn nur CommonMark (.md)-Eingabe verwendet wird."
-    elif $PY_CMD -m pip install saxonche; then
+    elif $PY_CMD -m pip install --break-system-packages saxonche; then
         echo "[Fertig] saxonche wurde erfolgreich installiert."
     else
         echo -e "${RED}[Fehler] saxonche-Installation fehlgeschlagen.${NC}"
@@ -420,7 +420,7 @@ else
     echo ""
 
     echo "[3/3] tkinterdnd2 wird installiert..."
-    if $PY_CMD -m pip install "tkinterdnd2>=0.4.2,<0.5.0"; then
+    if $PY_CMD -m pip install --break-system-packages "tkinterdnd2>=0.4.2,<0.5.0"; then
         echo "[Fertig] tkinterdnd2 wurde erfolgreich installiert."
     else
         echo -e "${RED}[Fehler] tkinterdnd2-Installation fehlgeschlagen.${NC}"

@@ -166,7 +166,7 @@ else
     fi
 
     echo "[3/3] pdfplumber Pillow をインストールしています..."
-    if $PY_CMD -m pip install pdfplumber Pillow; then
+    if $PY_CMD -m pip install --break-system-packages pdfplumber Pillow; then
         echo "[完了] pdfplumber Pillow のインストールが完了しました。"
     else
         echo -e "${RED}[エラー] pdfplumber Pillow のインストールに失敗しました。${NC}"
@@ -446,7 +446,7 @@ else
     echo ""
 
     echo "[1/3] textgrid をインストールしています..."
-    if $PY_CMD -m pip install textgrid; then
+    if $PY_CMD -m pip install --break-system-packages textgrid; then
         echo "[完了] textgrid のインストールが完了しました。"
     else
         echo -e "${RED}[エラー] textgrid のインストールに失敗しました。${NC}"
@@ -462,7 +462,7 @@ else
         echo "自動インストールできません。"
         echo ""
         echo "CommonMark（.md）形式の入力のみ使用する場合は saxonche 不要です。"
-    elif $PY_CMD -m pip install saxonche; then
+    elif $PY_CMD -m pip install --break-system-packages saxonche; then
         echo "[完了] saxonche のインストールが完了しました。"
     else
         echo -e "${RED}[エラー] saxonche のインストールに失敗しました。${NC}"
@@ -472,7 +472,7 @@ else
     echo ""
 
     echo "[3/3] tkinterdnd2 をインストールしています..."
-    if $PY_CMD -m pip install "tkinterdnd2>=0.4.2,<0.5.0"; then
+    if $PY_CMD -m pip install --break-system-packages "tkinterdnd2>=0.4.2,<0.5.0"; then
         echo "[完了] tkinterdnd2 のインストールが完了しました。"
     else
         echo -e "${RED}[エラー] tkinterdnd2 のインストールに失敗しました。${NC}"
