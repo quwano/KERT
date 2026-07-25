@@ -194,6 +194,7 @@ Das Wurzelelement ist `<root>`, mit Überschriftenelementen (`title1` bis `title
 | `<yomikae yomi="Lesung">Anzeige</yomikae>` | Alternative Lesung | `<yomikae yomi="read">display</yomikae>` |
 | `<u>` | Unterstrichen | `<u>unterstrichener Text</u>` |
 | `<g>` | Betonung (fett) | `<g>betonter Text</g>` |
+| `<frame>` | Umrahmtes Feld | `<frame>A</frame>` |
 | `<sub>` | Tiefgestellt | `<sub>2</sub>` |
 | `<sup>` | Hochgestellt | `<sup>3</sup>` |
 | `<math>` | MathML-Formel | `<math xmlns="...">...</math>` |

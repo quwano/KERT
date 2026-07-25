@@ -194,6 +194,7 @@ The root element is `<root>`, with heading elements (`title1` to `title5`) and p
 | `<yomikae yomi="reading">display</yomikae>` | Alternative reading | `<yomikae yomi="read">display</yomikae>`     |
 | `<u>` | Underline | `<u>underlined text</u>`                     |
 | `<g>` | Emphasis (bold) | `<g>emphasized text</g>`                     |
+| `<frame>` | Framed box | `<frame>A</frame>`                           |
 | `<sub>` | Subscript | `<sub>2</sub>`                               |
 | `<sup>` | Superscript | `<sup>3</sup>`                               |
 | `<math>` | MathML formula | `<math xmlns="...">...</math>`               |
