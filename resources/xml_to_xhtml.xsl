@@ -6,7 +6,7 @@
     - 各読み上げ単位（ruby, yomikae, テキストノード）をspan要素でラップ
     - span要素にはdata-indexで順序番号を付与（Pythonでidに変換）
     - title1-title5: タイトルテキスト（XHTML装飾付き）、セクション単位で出力
-    - p: 段落テキスト（XHTML装飾付き）
+    - p: 段落テキスト（XHTML装飾付き）。img単独の段落は<figure>として出力
     - ruby: <ruby><rb>親字</rb><rt>読み</rt></ruby>
     - yomikae: 要素内容のみ出力（表示用テキスト）
     - u: <u>下線</u>
@@ -50,7 +50,15 @@
                                 </heading-text>
                             </xsl:when>
                             <xsl:when test="self::p">
-                                <p><xsl:apply-templates mode="with-span"/></p>
+                                <xsl:choose>
+                                    <!-- img単独の段落: <figure>として出力（CSSのfigure img制約を適用するため） -->
+                                    <xsl:when test="count(*) = 1 and img and not(text()[normalize-space()])">
+                                        <figure><xsl:apply-templates mode="with-span"/></figure>
+                                    </xsl:when>
+                                    <xsl:otherwise>
+                                        <p><xsl:apply-templates mode="with-span"/></p>
+                                    </xsl:otherwise>
+                                </xsl:choose>
                             </xsl:when>
                             <xsl:when test="self::table">
                                 <table><xsl:apply-templates mode="with-span"/></table>

@@ -1697,7 +1697,7 @@ def process_xml_paragraph(
         span_id += 1
 
     if result.strip():
-        if paragraph.lstrip().startswith('<table'):
+        if paragraph.lstrip().startswith('<table') or paragraph.lstrip().startswith('<figure'):
             xhtml_paragraph = f'        {result.strip()}'
         else:
             xhtml_paragraph = f'        <p>{result}</p>'
@@ -1705,50 +1705,6 @@ def process_xml_paragraph(
         xhtml_paragraph = ""
 
     return xhtml_paragraph, smil_pars, span_id, tg_index
-
-
-def _is_image_only_paragraph(paragraph: str) -> bool:
-    """
-    段落が画像のみで構成されているかどうかを判定する。
-
-    Parameters
-    ----------
-    paragraph : str
-        判定対象の段落テキスト。
-
-    Returns
-    -------
-    bool
-        画像のみの段落の場合True。
-    """
-    # 画像記法を除去した後にテキストが残らなければ画像のみ
-    text_without_images = IMAGE_PATTERN.sub('', paragraph)
-    return text_without_images.strip() == ''
-
-
-def _generate_image_only_paragraph(paragraph: str) -> str:
-    """
-    画像のみの段落をXHTMLに変換する。
-
-    Parameters
-    ----------
-    paragraph : str
-        画像記法のみを含む段落テキスト。
-
-    Returns
-    -------
-    str
-        XHTML段落要素（<p>タグ）。
-    """
-    from html import escape
-    from pathlib import Path
-
-    images = IMAGE_PATTERN.findall(paragraph)
-    img_tags = []
-    for alt, path in images:
-        filename = Path(path).name
-        img_tags.append(f'<img src="../images/{escape(filename)}" alt="{escape(alt)}"/>')
-    return f'        <p>{"".join(img_tags)}</p>'
 
 
 def process_paragraph(

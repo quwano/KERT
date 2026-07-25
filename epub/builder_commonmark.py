@@ -191,9 +191,19 @@ def build_section_xhtml_and_smil(
             if tbl_xhtml:
                 xhtml_paragraphs.append(tbl_xhtml)
         elif isinstance(paragraph, str) and IMAGE_ONLY_PAT.match(paragraph):
-            # 画像のみの段落: SMILマッチングをバイパスして <figure> として出力
-            img_xhtml = escape_with_formatting(paragraph.strip())
-            xhtml_paragraphs.append(f'        <figure>{img_xhtml}</figure>')
+            # 画像のみの段落: 通常の段落と同様に読み上げ・SMIL同期を行い、<figure>で出力
+            para_p, para_smil, span_id, tg_index = process_paragraph(
+                paragraph, tg_intervals, tg_index, span_id,
+                element_prefix, xhtml_path, audio_path,
+                highlight_mode=highlight_mode,
+                is_xml=False
+            )
+            smil_pars.extend(para_smil)
+            if para_p:
+                content = para_p.strip()
+                if content.startswith("<p>") and content.endswith("</p>"):
+                    content = content[3:-4]
+                xhtml_paragraphs.append(f'        <figure>{content}</figure>')
         else:
             para_p, para_smil, span_id, tg_index = process_paragraph(
                 paragraph, tg_intervals, tg_index, span_id,
@@ -686,9 +696,19 @@ def build_commonmark_multi_epub(
                     if tbl_xhtml:
                         xhtml_paragraphs.append(tbl_xhtml)
                 elif isinstance(paragraph, str) and IMAGE_ONLY_PAT.match(paragraph):
-                    # 画像のみの段落: SMILマッチングをバイパスして <figure> として出力
-                    img_xhtml = escape_with_formatting(paragraph.strip())
-                    xhtml_paragraphs.append(f'        <figure>{img_xhtml}</figure>')
+                    # 画像のみの段落: 通常の段落と同様に読み上げ・SMIL同期を行い、<figure>で出力
+                    para_p, para_smil, span_id, tg_index = process_paragraph(
+                        paragraph, tg_intervals, tg_index, span_id,
+                        element_prefix, xhtml_path, audio_path_rel,
+                        highlight_mode=highlight_mode,
+                        is_xml=False
+                    )
+                    smil_pars.extend(para_smil)
+                    if para_p:
+                        content = para_p.strip()
+                        if content.startswith("<p>") and content.endswith("</p>"):
+                            content = content[3:-4]
+                        xhtml_paragraphs.append(f'        <figure>{content}</figure>')
                 else:
                     para_p, para_smil, span_id, tg_index = process_paragraph(
                         paragraph, tg_intervals, tg_index, span_id,
