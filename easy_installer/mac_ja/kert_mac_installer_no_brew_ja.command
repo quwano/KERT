@@ -455,14 +455,7 @@ else
     echo ""
 
     echo "[2/3] saxonche をインストールしています..."
-    if [ "$ARCH" = "arm64" ]; then
-        echo ""
-        echo -e "${YELLOW}[警告] Apple Silicon (ARM64) Mac が検出されました。${NC}"
-        echo "saxonche は現在 ARM64 macOS 向けパッケージが PyPI に存在しないため、"
-        echo "自動インストールできません。"
-        echo ""
-        echo "CommonMark（.md）形式の入力のみ使用する場合は saxonche 不要です。"
-    elif $PY_CMD -m pip install --break-system-packages saxonche; then
+    if $PY_CMD -m pip install --break-system-packages saxonche; then
         echo "[完了] saxonche のインストールが完了しました。"
     else
         echo -e "${RED}[エラー] saxonche のインストールに失敗しました。${NC}"
