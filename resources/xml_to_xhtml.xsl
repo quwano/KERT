@@ -11,6 +11,7 @@
     - yomikae: 要素内容のみ出力（表示用テキスト）
     - u: <u>下線</u>
     - g: <strong>強調</strong>
+    - frame: <span style="...">囲み枠</span>（styleは text/common.py の FRAME_STYLE と同期）
     - sub: <sub>下付き</sub>
     - sup: <sup>上付き</sup>
 -->
@@ -111,6 +112,13 @@
         <strong><xsl:apply-templates mode="with-span"/></strong>
     </xsl:template>
 
+    <!-- frame要素: 囲み枠spanに変換（styleはtext/common.pyのFRAME_STYLEと同期） -->
+    <xsl:template match="frame" mode="with-span">
+        <span style="border: solid 2px; padding: 0.25em; margin:0em 0.2em 0em 0.2em; white-space: nowrap;">
+            <xsl:apply-templates mode="with-span"/>
+        </span>
+    </xsl:template>
+
     <!-- sub要素: XHTMLのsubタグに変換 -->
     <xsl:template match="sub" mode="with-span">
         <sub><xsl:apply-templates mode="with-span"/></sub>
@@ -145,7 +153,7 @@
 
     <!-- 空白のみのテキストノード: インライン要素間の空白は保持 -->
     <xsl:template match="text()[not(normalize-space())]" mode="with-span">
-        <xsl:if test="parent::u or parent::g or parent::sub or parent::sup or parent::title1 or parent::title2 or parent::title3 or parent::title4 or parent::title5 or parent::p or parent::td or parent::th">
+        <xsl:if test="parent::u or parent::g or parent::frame or parent::sub or parent::sup or parent::title1 or parent::title2 or parent::title3 or parent::title4 or parent::title5 or parent::p or parent::td or parent::th">
             <xsl:if test="preceding-sibling::node() and following-sibling::node()">
                 <xsl:value-of select="' '"/>
             </xsl:if>
@@ -180,6 +188,12 @@
 
     <xsl:template match="g" mode="no-span">
         <strong><xsl:apply-templates mode="no-span"/></strong>
+    </xsl:template>
+
+    <xsl:template match="frame" mode="no-span">
+        <span style="border: solid 2px; padding: 0.25em; margin:0em 0.2em 0em 0.2em; white-space: nowrap;">
+            <xsl:apply-templates mode="no-span"/>
+        </span>
     </xsl:template>
 
     <xsl:template match="sub" mode="no-span">
@@ -237,6 +251,12 @@
 
     <xsl:template match="g" mode="seg-content">
         <strong><xsl:apply-templates mode="seg-content"/></strong>
+    </xsl:template>
+
+    <xsl:template match="frame" mode="seg-content">
+        <span style="border: solid 2px; padding: 0.25em; margin:0em 0.2em 0em 0.2em; white-space: nowrap;">
+            <xsl:apply-templates mode="seg-content"/>
+        </span>
     </xsl:template>
 
     <xsl:template match="sub" mode="seg-content">

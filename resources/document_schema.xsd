@@ -58,6 +58,7 @@
   </xs:element>
   <xs:element name="u" type="rich_text"/>
   <xs:element name="g" type="rich_text"/>
+  <xs:element name="frame" type="rich_text"/>
   <xs:element name="img">
     <xs:complexType>
       <xs:attribute name="src" type="xs:string" use="required"/>
@@ -72,6 +73,7 @@
       <xs:element ref="ruby"/>
       <xs:element ref="g"/>
       <xs:element ref="u"/>
+      <xs:element ref="frame"/>
       <xs:element ref="img"/>
     </xs:choice>
   </xs:complexType>

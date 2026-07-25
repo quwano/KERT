@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <title1>Frame Test<frame>NEW</frame></title1>
+    <title2>Chapter1</title2>
+    <p>Please press the <frame>OK</frame> button to continue. The <frame>Cancel</frame> button will stop the process.</p>
+    <p>This is a <frame>boxed <g>and emphasized</g></frame> phrase inside a sentence.</p>
+    <title2>Chapter2</title2>
+    <p>Regular text with <g>strong</g>, <u>underline</u>, <sub>sub</sub>, <sup>sup</sup>, and a <frame>frame</frame> all together in one paragraph.</p>
+</root>

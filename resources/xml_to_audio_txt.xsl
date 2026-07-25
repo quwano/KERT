@@ -7,7 +7,7 @@
     - p: 読み仮名変換後のテキスト + 改行
     - ruby: @yomi属性値（読み仮名）を出力
     - yomikae: @yomi属性値（読み替え）を出力
-    - u, g, sub, sup: 要素内容のみ出力
+    - u, g, frame, sub, sup: 要素内容のみ出力
 -->
 <xsl:stylesheet version="3.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -75,7 +75,7 @@
                 </xsl:when>
 
                 <!-- 装飾要素: 再帰的に処理 -->
-                <xsl:when test="self::u or self::g or self::sub or self::sup">
+                <xsl:when test="self::u or self::g or self::frame or self::sub or self::sup">
                     <xsl:for-each select="node()">
                         <xsl:call-template name="process-node"/>
                     </xsl:for-each>
