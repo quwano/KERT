@@ -194,6 +194,7 @@ XML スキーマ（`resources/document_schema.xsd`）に準拠した XML ファ�
 | `<yomikae yomi="読み">表示</yomikae>` | 読み替え | `<yomikae yomi="まじ">本気</yomikae>`    |
 | `<u>`                             | 下線 | `<u>下線テキスト</u>`                      |
 | `<g>`                             | 強調（太字） | `<g>強調テキスト</g>`                      |
+| `<frame>`                         | 囲み枠 | `<frame>ア</frame>`                     |
 | `<sub>`                           | 下付き文字 | `<sub>2</sub>`                       |
 | `<sup>`                           | 上付き文字 | `<sup>3</sup>`                       |
 | `<math>`                          | MathML 数式 | `<math xmlns="...">...</math>`       |
