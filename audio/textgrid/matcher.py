@@ -29,6 +29,7 @@ from text.common import (
     IMAGE_PATTERN,
     READING_SUB_PATTERN,
     strip_formatting,
+    TextNormalizer,
 )
 from core.config import PUNCTUATION_CHARS
 
@@ -1415,6 +1416,58 @@ def _find_next_match_position(
     return -1
 
 
+def _find_span_resync(
+    tg_word_norm: str,
+    remaining: str,
+    tg_intervals: list[tuple[str, float, float]],
+    tg_index: int,
+    max_forward_search: int = 40,
+) -> tuple[int, int]:
+    """process_xml_paragraph用: span内で単語が全くマッチしない場合の復帰位置を探す。
+
+    2段階で試す:
+    1. 現在のTG単語がspan読みの途中に出現する（span側にTextGridには現れない
+       文字がある）場合、tg_indexはそのまま、その分だけspan側をスキップする。
+    2. TG側に余分な単語がある場合、前方を探索し、次の単語も連続一致することを
+       確認できた候補にのみ tg_index を進める（誤復帰防止）。
+
+    tg_indexが単調増加のみで進む前提（後方探索なし）。見つからなければ
+    (tg_index, 0) を返し、呼び出し側は現状通り諦める。
+
+    Returns
+    -------
+    tuple[int, int]
+        (復帰後のtg_index, span読みでスキップする文字数)。
+    """
+    if len(tg_word_norm) >= 2:
+        pos = remaining.find(tg_word_norm)
+        if pos > 0:
+            return tg_index, pos
+
+    forward_end = min(tg_index + max_forward_search, len(tg_intervals))
+    for i in range(tg_index + 1, forward_end):
+        tg_word = tg_intervals[i][0]
+        if not tg_word or tg_word == "<unk>":
+            continue
+        cand_norm = _normalize_for_matching(normalize_text(tg_word).lower())
+        if not cand_norm or not remaining.startswith(cand_norm):
+            continue
+        # 次の単語も続けて一致するか確認して誤復帰を防ぐ
+        after = remaining[len(cand_norm):]
+        confirmed = not after  # spanの末尾に到達していれば十分
+        for j in range(i + 1, min(i + 5, len(tg_intervals))):
+            nxt = tg_intervals[j][0]
+            if not nxt or nxt == "<unk>":
+                continue
+            nxt_norm = _normalize_for_matching(normalize_text(nxt).lower())
+            if nxt_norm:
+                confirmed = after.startswith(nxt_norm) or nxt_norm.startswith(after)
+            break
+        if confirmed:
+            return i, 0
+    return tg_index, 0
+
+
 def _extract_span_reading(span_content: str) -> str:
     """
     span要素の内容から読みテキストを抽出する。
@@ -1545,6 +1598,9 @@ def process_xml_paragraph(
             span_reading = data_yomi.lower()
         else:
             span_reading = _extract_span_reading(span_content)
+        # TextGrid側（文字起こし）はto_reading済みなので、span側も同じ読みに揃える
+        # （揃えないと①②③等がTextGrid側の「いち」「に」等と一致せずマッチに失敗する）
+        span_reading = TextNormalizer.normalize_all(TextNormalizer.to_reading(span_reading), include_brackets=True)
         # マッチング用にスペース・句読点を除去した版
         span_reading_clean = _normalize_for_matching(span_reading)
 
@@ -1685,7 +1741,16 @@ def process_xml_paragraph(
                 # tg_indexは進めない（キャリー消費後に進める）
                 break
             else:
-                # マッチしない場合、現在のspanの処理を終了
+                # マッチしない場合、諦める前に前方への復帰を試みる
+                # （tg_indexを凍結させたまま次spanに進むと同期喪失が連鎖するため）
+                new_idx, skip_len = _find_span_resync(tg_word_norm, remaining_clean, tg_intervals, tg_index)
+                if skip_len > 0:
+                    matched_text += remaining_clean[:skip_len]
+                    continue
+                if new_idx > tg_index:
+                    tg_index = new_idx
+                    continue
+                # 復帰できない場合、現在のspanの処理を終了
                 break
 
         # SMIL par要素を生成（タイミングが取得できた場合のみ）

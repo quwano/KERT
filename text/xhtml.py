@@ -12,6 +12,8 @@ import bisect
 from functools import lru_cache
 from pathlib import Path
 
+from text.common import TextNormalizer
+
 # XSLTファイルのパス
 _PROJECT_ROOT = Path(__file__).parent.parent
 _XSLT_READING = _PROJECT_ROOT / "resources" / "xhtml_to_reading_text.xsl"
@@ -89,8 +91,13 @@ def normalize_xhtml_text(xhtml: str) -> str:
     - math要素: Speech Rule Engineで音声テキストに変換
     - ruby要素: rt（ルビ）部分のみ抽出、rb（親字）は除去
     - その他のタグ: 除去してテキスト内容のみ残す
+    - 丸数字・ローマ数字等: 読み仮名に変換（text/processing.pyのnormalize_textと同様、
+      TextGrid側の文字起こしがto_reading済みのため、揃える必要がある）
     """
     result = _xhtml_fragment_to_reading_text(xhtml)
+
+    # 特殊文字を読み仮名に変換（MFAとの整合性のため。normalize_textと同じ処理）
+    result = TextNormalizer.to_reading(result)
 
     # 括弧の正規化
     result = (result
