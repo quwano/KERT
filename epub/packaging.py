@@ -165,7 +165,26 @@ def package_epub(output_epub: str, oebps: Path, meta_inf: Path) -> None:
 _IMAGE_PATTERN = re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
 
 # XHTMLの<img>タグのパターン: <img src="../images/filename" ...>
-_XHTML_IMG_PATTERN = re.compile(r'<img\b[^>]*\bsrc="../images/([^"]+)"')
+_XHTML_IMG_PATTERN = re.compile(r'<img\b[^>]*\bsrc="\.\./images/([^"]+)"')
+
+
+def _find_image_source(source_dir: Path, filename: str) -> Path | None:
+    """ファイル名から実ファイルを探索する（浅い階層を優先）。
+
+    source_dir/images/{filename}、source_dir/{filename} の順で見つからなければ、
+    source_dir以下をファイル名一致で再帰探索する（img/等の任意のサブフォルダに対応）。
+    intermediate_products（過去のビルド成果物）は除外する。
+    """
+    for candidate in (source_dir / "images" / filename, source_dir / filename):
+        if candidate.is_file():
+            return candidate
+    matches = [
+        p for p in source_dir.rglob("*")
+        if p.name == filename and p.is_file()
+        and "intermediate_products" not in p.parts
+    ]
+    matches.sort(key=lambda p: (len(p.parts), str(p)))
+    return matches[0] if matches else None
 
 
 def extract_and_copy_images(
@@ -211,11 +230,8 @@ def extract_and_copy_images(
     for filename in _XHTML_IMG_PATTERN.findall(full_text):
         if filename in image_filenames:
             continue
-        # source_dir/images/filename → source_dir/filename の順で検索
-        img_source = source_dir / "images" / filename
-        if not img_source.exists():
-            img_source = source_dir / filename
-        if img_source.exists():
+        img_source = _find_image_source(source_dir, filename)
+        if img_source is not None:
             shutil.copy(img_source, oebps / "images" / filename)
             image_filenames.append(filename)
         else:

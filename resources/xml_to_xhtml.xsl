@@ -16,7 +16,9 @@
     - sup: <sup>上付き</sup>
 -->
 <xsl:stylesheet version="3.0"
-    xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:k="urn:kert:xslt"
+    exclude-result-prefixes="k">
 
     <xsl:output method="xml" encoding="UTF-8" omit-xml-declaration="yes"/>
 
@@ -137,10 +139,20 @@
         <sup><xsl:apply-templates mode="with-span"/></sup>
     </xsl:template>
 
+    <!-- img/@src を EPUB内部パス ../images/{ファイル名} に正規化する。
+         元のsrcはソースXMLからの相対パス（例 img/foo.jpeg）でよい。
+         実ファイルの探索は epub/packaging.py の extract_and_copy_images() が行う。
+         Windows由来の \ 区切りも / に正規化してからファイル名を取り出す。 -->
+    <xsl:function name="k:image-src" as="xs:string"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema">
+        <xsl:param name="src" as="xs:string"/>
+        <xsl:sequence select="concat('../images/', tokenize(replace($src, '\\', '/'), '/')[last()])"/>
+    </xsl:function>
+
     <!-- img要素: spanでラップ -->
     <xsl:template match="img" mode="with-span">
         <span data-index="{accumulator-before('span-counter')}">
-            <img src="{@src}" alt="{if (@alt) then @alt else ''}"/>
+            <img src="{k:image-src(@src)}" alt="{if (@alt) then @alt else ''}"/>
         </span>
     </xsl:template>
 
@@ -218,7 +230,7 @@
 
     <!-- img要素: no-spanモード -->
     <xsl:template match="img" mode="no-span">
-        <img src="{@src}" alt="{if (@alt) then @alt else ''}"/>
+        <img src="{k:image-src(@src)}" alt="{if (@alt) then @alt else ''}"/>
     </xsl:template>
 
     <!-- math要素: with-spanモードでspanでラップして出力（タイトル直下など） -->
@@ -281,7 +293,7 @@
 
     <!-- img要素: seg-contentモード -->
     <xsl:template match="img" mode="seg-content">
-        <img src="{@src}" alt="{if (@alt) then @alt else ''}"/>
+        <img src="{k:image-src(@src)}" alt="{if (@alt) then @alt else ''}"/>
     </xsl:template>
 
     <!-- math要素: seg-contentモードでそのまま出力（sre-speech属性は除外） -->
