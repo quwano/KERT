@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:m="http://www.w3.org/1998/Math/MathML"
+           elementFormDefault="qualified">
+  <xs:import namespace="http://www.w3.org/1998/Math/MathML" schemaLocation="mathml3/mathml3.xsd"/>
   <xs:element name="root">
     <xs:complexType>
       <xs:choice maxOccurs="unbounded">
@@ -10,6 +13,8 @@
         <xs:element ref="title5"/>
         <xs:element ref="p"/>
         <xs:element ref="table"/>
+        <!-- math-block: a raw MathML <math> element, allowed as a sibling of p/table. -->
+        <xs:element ref="m:math" minOccurs="0"/>
       </xs:choice>
     </xs:complexType>
   </xs:element>
@@ -75,6 +80,8 @@
       <xs:element ref="u"/>
       <xs:element ref="frame"/>
       <xs:element ref="img"/>
+      <!-- math-inline: a raw MathML <math> element, usable anywhere inline. -->
+      <xs:element ref="m:math" minOccurs="0"/>
     </xs:choice>
   </xs:complexType>
 </xs:schema>
